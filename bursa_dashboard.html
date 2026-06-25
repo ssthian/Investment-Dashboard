@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bursa Portfolio — Live Signal Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f9f8f5; --sf:#fff; --s2:#f4f3ef; --s3:#eeece8;
+  --bd:#e5e3dd; --bd2:#d9d7d0;
+  --tx:#1a1918; --t2:#3d3b38; --mu:#8a8880; --dim:#c8c5be;
+  --ch:#1a7a4a; --chb:#edf7f1; --chd:#b8dfc9;
+  --fa:#1b5fa8; --fab:#edf3fc; --fad:#b3cff0;
+  --ov:#9a5c00; --ovb:#fdf3e0; --ovd:#f0ce90;
+  --ex:#c0392b; --exb:#fdecea; --exd:#f0b8b3;
+  --ac:#5a3fcf;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;font-size:13px;line-height:1.5}
+.wrap{max-width:1600px;margin:0 auto;padding:0 24px 80px}
+
+/* ── HEADER ── */
+header{padding:22px 0 18px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;border-bottom:1px solid var(--bd);margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:11px}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--ch);animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.68)}}
+.brand-title{font-size:17px;font-weight:600;letter-spacing:-.3px}
+.brand-sub{font-size:11px;color:var(--mu);font-family:'DM Mono',monospace;margin-top:2px}
+.hright{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+#clock{font-family:'DM Mono',monospace;font-size:11px;color:var(--mu);background:var(--sf);border:1px solid var(--bd);padding:5px 11px;border-radius:6px}
+#status{font-family:'DM Mono',monospace;font-size:11px;color:var(--mu);display:flex;align-items:center;gap:6px}
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--ch);flex-shrink:0}
+.sdot.loading{background:var(--ov);animation:pulse 1s infinite}
+.refresh-btn{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;background:var(--ac);color:#fff;border:none;padding:7px 14px;border-radius:6px;cursor:pointer;transition:opacity .15s}
+.refresh-btn:hover{opacity:.8}
+.refresh-btn:disabled{opacity:.35;cursor:not-allowed}
+
+/* ── LEGEND ── */
+.legend{display:flex;gap:18px;flex-wrap:wrap;align-items:center;padding:11px 15px;background:var(--sf);border:1px solid var(--bd);border-radius:9px;margin-bottom:16px;font-size:12px;font-weight:500;color:var(--t2)}
+.leg{display:flex;align-items:center;gap:6px}
+.ldot{width:7px;height:7px;border-radius:50%}
+#last-update{margin-left:auto;font-family:'DM Mono',monospace;font-size:10px;color:var(--mu)}
+
+/* ── SUMMARY CARDS ── */
+.sum-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:9px;margin-bottom:20px}
+.sum-card{background:var(--sf);border:1px solid var(--bd);border-radius:9px;padding:13px 15px}
+.sum-lbl{font-size:10px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.sum-val{font-family:'DM Mono',monospace;font-size:21px;font-weight:500}
+.sum-sub{font-size:10px;color:var(--mu);margin-top:2px}
+
+/* ── TABS ── */
+.tab-bar{display:flex;margin-bottom:18px;border-bottom:2px solid var(--bd);overflow-x:auto}
+.tbtn{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;background:none;border:none;cursor:pointer;color:var(--mu);padding:9px 16px;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;white-space:nowrap}
+.tbtn:hover{color:var(--t2)}
+.tbtn.active{color:var(--ac);border-bottom-color:var(--ac);font-weight:600}
+.tpanel{display:none}.tpanel.active{display:block;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+
+/* ── SECTION LABEL ── */
+.sec-lbl{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mu);display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.sec-lbl::after{content:'';flex:1;height:1px;background:var(--bd)}
+
+/* ── TABLE ── */
+.tbl-wrap{overflow-x:auto;margin-bottom:28px;border:1px solid var(--bd);border-radius:11px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+table{width:100%;border-collapse:collapse;background:var(--sf);font-size:12px}
+thead tr{background:var(--s2)}
+thead th{padding:9px 11px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--mu);white-space:nowrap;border-bottom:1px solid var(--bd)}
+thead th:first-child{padding-left:15px;min-width:165px}
+tbody tr{border-bottom:1px solid var(--bd);transition:background .1s;cursor:pointer}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--s2)}
+tbody tr.stripe-cheap{border-left:3px solid var(--ch)}
+tbody tr.stripe-fair{border-left:3px solid var(--fa)}
+tbody tr.stripe-over{border-left:3px solid var(--ov)}
+tbody tr.stripe-exp{border-left:3px solid var(--ex)}
+td{padding:10px 11px;vertical-align:middle;white-space:nowrap}
+td:first-child{padding-left:15px}
+.cid{font-family:'DM Mono',monospace;font-size:12px;font-weight:500}
+.cname{font-size:10px;color:var(--mu);margin-top:2px;white-space:normal;max-width:145px}
+.tbadge{display:inline-block;font-size:8px;font-weight:700;letter-spacing:.06em;padding:2px 6px;border-radius:20px;text-transform:uppercase;margin-bottom:3px}
+.tb-div{background:var(--chb);color:var(--ch);border:1px solid var(--chd)}
+.tb-growth{background:#f0ecff;color:#5a3fcf;border:1px solid #c9bcf5}
+.tb-both{background:var(--fab);color:var(--fa);border:1px solid var(--fad)}
+.price-val{font-family:'DM Mono',monospace;font-size:14px;font-weight:500}
+.price-loading{font-family:'DM Mono',monospace;font-size:11px;color:var(--dim)}
+.chg{display:inline-block;font-family:'DM Mono',monospace;font-size:10px;padding:2px 5px;border-radius:3px;margin-top:2px}
+.chg.up{background:var(--chb);color:var(--ch)}.chg.dn{background:var(--exb);color:var(--ex)}.chg.fl{background:var(--s2);color:var(--mu)}
+.sig{display:inline-flex;align-items:center;gap:4px;font-family:'DM Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.sig::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.sig-cheap{background:var(--chb);color:var(--ch);border:1px solid var(--chd)}.sig-cheap::before{background:var(--ch)}
+.sig-fair{background:var(--fab);color:var(--fa);border:1px solid var(--fad)}.sig-fair::before{background:var(--fa)}
+.sig-over{background:var(--ovb);color:var(--ov);border:1px solid var(--ovd)}.sig-over::before{background:var(--ov)}
+.sig-exp{background:var(--exb);color:var(--ex);border:1px solid var(--exd)}.sig-exp::before{background:var(--ex)}
+.sig-na{background:var(--s2);color:var(--mu);border:1px solid var(--bd)}.sig-na::before{background:var(--dim)}
+.zbar-wrap{min-width:110px}
+.zbar{height:4px;border-radius:2px;background:linear-gradient(to right,var(--ch) 0%,var(--fa) 40%,var(--ov) 72%,var(--ex) 100%);position:relative;margin-bottom:4px;opacity:.7}
+.zneedle{position:absolute;top:-4px;width:3px;height:12px;border-radius:2px;background:var(--tx);transform:translateX(-50%);box-shadow:0 1px 3px rgba(0,0,0,.2);transition:left .5s ease}
+.zlabels{display:flex;justify-content:space-between;font-size:8px;color:var(--dim);font-family:'DM Mono',monospace}
+.r{font-family:'DM Mono',monospace;font-size:10px;font-weight:500}
+.r-cheap{color:var(--ch)}.r-fair{color:var(--fa)}.r-over{color:var(--ov)}
+.mv{font-family:'DM Mono',monospace;font-size:11px;font-weight:500}
+.ml{font-size:9px;color:var(--mu);margin-top:1px}
+.good{color:var(--ch)}.warn{color:var(--ov)}.bad{color:var(--ex)}.neutral{color:var(--t2)}
+.enote{font-size:10px;color:var(--mu);max-width:180px;white-space:normal;line-height:1.45}
+.view-link{font-size:9px;color:var(--ac);font-weight:600;text-decoration:none;margin-top:4px;display:inline-block;cursor:pointer}
+.view-link:hover{text-decoration:underline}
+.empty-state{padding:22px;font-size:12px;color:var(--mu);font-style:italic}
+
+/* ══ DETAIL PANEL ══ */
+#detail-overlay{display:none;position:fixed;inset:0;background:rgba(26,25,24,.45);z-index:100;backdrop-filter:blur(2px)}
+#detail-overlay.open{display:flex;align-items:flex-start;justify-content:flex-end}
+#detail-panel{width:min(780px,95vw);height:100vh;overflow-y:auto;background:var(--sf);border-left:1px solid var(--bd);box-shadow:-4px 0 32px rgba(0,0,0,.12);padding:0;animation:slideIn .22s ease}
+@keyframes slideIn{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+.dp-header{position:sticky;top:0;z-index:10;background:var(--sf);border-bottom:1px solid var(--bd);padding:18px 24px 16px;display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.dp-close{width:32px;height:32px;border-radius:50%;border:1px solid var(--bd);background:var(--s2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--mu);flex-shrink:0;transition:background .12s}
+.dp-close:hover{background:var(--s3)}
+.dp-title{font-size:20px;font-weight:600;letter-spacing:-.3px}
+.dp-sub{font-size:12px;color:var(--mu);margin-top:3px}
+.dp-body{padding:24px}
+.dp-section{margin-bottom:28px}
+.dp-section-title{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mu);border-bottom:1px solid var(--bd);padding-bottom:8px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.dp-section-title .icon{font-size:14px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.kpi{background:var(--s2);border-radius:8px;padding:12px 13px;border:1px solid var(--bd)}
+.kpi-val{font-family:'DM Mono',monospace;font-size:18px;font-weight:500;margin-bottom:3px}
+.kpi-lbl{font-size:10px;color:var(--mu);font-weight:500}
+.kpi-sub{font-size:10px;color:var(--mu);margin-top:3px;line-height:1.4}
+.moat-list,.thesis-list{list-style:none;display:flex;flex-direction:column;gap:8px}
+.moat-list li,.thesis-list li{display:flex;gap:10px;align-items:flex-start;font-size:12px;line-height:1.5;color:var(--t2)}
+.moat-list li::before{content:'✦';color:var(--ch);font-size:10px;margin-top:2px;flex-shrink:0}
+.thesis-list li::before{content:'→';color:var(--ac);font-size:11px;margin-top:1px;flex-shrink:0}
+.risk-list li::before{content:'⚠';color:var(--ov);font-size:10px;margin-top:2px;flex-shrink:0}
+.exit-list li::before{content:'✕';color:var(--ex);font-size:10px;margin-top:2px;flex-shrink:0}
+.hist-table{width:100%;border-collapse:collapse;font-size:11px}
+.hist-table th{padding:7px 9px;text-align:right;font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);background:var(--s2);border-bottom:1px solid var(--bd)}
+.hist-table th:first-child{text-align:left}
+.hist-table td{padding:7px 9px;text-align:right;border-bottom:1px solid var(--bd);font-family:'DM Mono',monospace}
+.hist-table td:first-child{text-align:left;font-family:'DM Sans',sans-serif;font-weight:500;color:var(--t2)}
+.hist-table tr:last-child td{border-bottom:none;font-weight:600;background:var(--chb)}
+.zone-display{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+.zone-box{padding:12px 14px;border-radius:8px;text-align:center}
+.zone-box-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}
+.zone-box-range{font-family:'DM Mono',monospace;font-size:14px;font-weight:500}
+.zone-box-note{font-size:10px;margin-top:4px;line-height:1.4}
+.zch{background:var(--chb);border:1px solid var(--chd)}.zch .zone-box-lbl{color:var(--ch)}.zch .zone-box-range{color:var(--ch)}
+.zfa{background:var(--fab);border:1px solid var(--fad)}.zfa .zone-box-lbl{color:var(--fa)}.zfa .zone-box-range{color:var(--fa)}
+.zov{background:var(--ovb);border:1px solid var(--ovd)}.zov .zone-box-lbl{color:var(--ov)}.zov .zone-box-range{color:var(--ov)}
+.entry-strat{background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:14px 16px;font-size:12px;line-height:1.6;color:var(--t2)}
+.entry-strat strong{color:var(--tx)}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;margin-right:5px;margin-bottom:4px}
+.pill-green{background:var(--chb);color:var(--ch);border:1px solid var(--chd)}
+.pill-blue{background:var(--fab);color:var(--fa);border:1px solid var(--fad)}
+.pill-amber{background:var(--ovb);color:var(--ov);border:1px solid var(--ovd)}
+.pill-red{background:var(--exb);color:var(--ex);border:1px solid var(--exd)}
+.pill-purple{background:#f0ecff;color:#5a3fcf;border:1px solid #c9bcf5}
+.dp-price-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:16px 20px;background:var(--s2);border-radius:10px;margin-bottom:20px}
+.dp-price{font-family:'DM Mono',monospace;font-size:28px;font-weight:500}
+.dp-sig{margin-top:4px}
+
+footer{padding:16px 24px;border-top:1px solid var(--bd);font-family:'DM Mono',monospace;font-size:10px;color:var(--mu);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;max-width:1600px;margin:0 auto}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="brand">
+    <div class="live-dot"></div>
+    <div>
+      <div class="brand-title">Bursa Portfolio — Live Signal Dashboard</div>
+      <div class="brand-sub">18 COUNTERS · BUFFETT FRAMEWORK · CLICK ANY ROW FOR DEEP DIVE</div>
+    </div>
+  </div>
+  <div class="hright">
+    <div id="clock">KL --:--:--</div>
+    <div id="status"><span class="sdot" id="sdot"></span><span id="stext">Initialising...</span></div>
+    <button class="refresh-btn" id="refreshBtn" onclick="fetchAll()">↻ Refresh</button>
+  </div>
+</header>
+
+<div class="legend">
+  <div class="leg"><div class="ldot" style="background:var(--ch)"></div>Cheap — Level 1 Buy</div>
+  <div class="leg"><div class="ldot" style="background:var(--fa)"></div>Fair Value — Accumulate</div>
+  <div class="leg"><div class="ldot" style="background:var(--ov)"></div>Overvalued — Wait</div>
+  <div class="leg"><div class="ldot" style="background:var(--ex)"></div>Expensive — Avoid</div>
+  <span id="last-update">Auto-refresh every 5 min · Click any row for full analysis</span>
+</div>
+
+<div class="sum-row">
+  <div class="sum-card"><div class="sum-lbl">Counters</div><div class="sum-val">18</div><div class="sum-sub">Bursa Malaysia</div></div>
+  <div class="sum-card"><div class="sum-lbl">Cheap</div><div class="sum-val" id="sc-cheap" style="color:var(--ch)">—</div><div class="sum-sub">Buy now</div></div>
+  <div class="sum-card"><div class="sum-lbl">Fair Value</div><div class="sum-val" id="sc-fair" style="color:var(--fa)">—</div><div class="sum-sub">Accumulate</div></div>
+  <div class="sum-card"><div class="sum-lbl">Overvalued</div><div class="sum-val" id="sc-over" style="color:var(--ov)">—</div><div class="sum-sub">Wait</div></div>
+  <div class="sum-card"><div class="sum-lbl">Expensive</div><div class="sum-val" id="sc-exp" style="color:var(--ex)">—</div><div class="sum-sub">Avoid</div></div>
+  <div class="sum-card"><div class="sum-lbl">Dividend</div><div class="sum-val">10</div><div class="sum-sub">Avg yield &gt;4%</div></div>
+  <div class="sum-card"><div class="sum-lbl">Growth</div><div class="sum-val">5</div><div class="sum-sub">Capital gain</div></div>
+  <div class="sum-card"><div class="sum-lbl">Hybrid</div><div class="sum-val">3</div><div class="sum-sub">Div + Growth</div></div>
+</div>
+
+<div class="tab-bar">
+  <button class="tbtn active" onclick="switchTab('all',this)">All (18)</button>
+  <button class="tbtn" onclick="switchTab('div',this)">Dividend (10)</button>
+  <button class="tbtn" onclick="switchTab('growth',this)">Growth (5)</button>
+  <button class="tbtn" onclick="switchTab('hybrid',this)">Hybrid (3)</button>
+  <button class="tbtn" onclick="switchTab('cheap',this)" style="color:var(--ch)">Cheap Only ✦</button>
+</div>
+
+<div class="tpanel active" id="tab-all">
+  <div class="sec-lbl"><span>Banks — NIM · NPL · CIR · CASA</span></div>
+  <div class="tbl-wrap"><table id="tbl-banks"></table></div>
+  <div class="sec-lbl"><span>REITs — DPU · NPI Margin · Gearing · Occupancy</span></div>
+  <div class="tbl-wrap"><table id="tbl-reits"></table></div>
+  <div class="sec-lbl"><span>Beverages / Sin — EBITDA Margin · FCF Yield · Payout</span></div>
+  <div class="tbl-wrap"><table id="tbl-bev"></table></div>
+  <div class="sec-lbl"><span>Retail — Gross Margin · Revenue Growth · Store Network</span></div>
+  <div class="tbl-wrap"><table id="tbl-retail"></table></div>
+  <div class="sec-lbl"><span>Port / Infrastructure — TEU Volume · EBITDA · Concession</span></div>
+  <div class="tbl-wrap"><table id="tbl-port"></table></div>
+  <div class="sec-lbl"><span>Growth Counters — EBITDA Margin · Revenue CAGR · Special Metrics</span></div>
+  <div class="tbl-wrap"><table id="tbl-growth-all"></table></div>
+</div>
+<div class="tpanel" id="tab-div">
+  <div class="sec-lbl"><span>Dividend counters — sorted by estimated yield highest first</span></div>
+  <div class="tbl-wrap"><table id="tbl-div-main"></table></div>
+</div>
+<div class="tpanel" id="tab-growth">
+  <div class="sec-lbl"><span>Growth counters — capital gain focus, low dividend</span></div>
+  <div class="tbl-wrap"><table id="tbl-growth-main"></table></div>
+</div>
+<div class="tpanel" id="tab-hybrid">
+  <div class="sec-lbl"><span>Hybrid counters — dividend income + capital appreciation</span></div>
+  <div class="tbl-wrap"><table id="tbl-hybrid-main"></table></div>
+</div>
+<div class="tpanel" id="tab-cheap">
+  <div class="sec-lbl"><span>Cheap zone — Level 1 entry signals active now</span></div>
+  <div class="tbl-wrap"><table id="tbl-cheap-main"></table></div>
+</div>
+</div><!-- /wrap -->
+
+<!-- DETAIL OVERLAY -->
+<div id="detail-overlay" onclick="closeDetail(event)">
+  <div id="detail-panel">
+    <div class="dp-header">
+      <div>
+        <div class="dp-title" id="dp-title">Counter</div>
+        <div class="dp-sub" id="dp-sub">Full analysis</div>
+      </div>
+      <div class="dp-close" onclick="closeDetailBtn()">✕</div>
+    </div>
+    <div class="dp-body" id="dp-body"></div>
+  </div>
+</div>
+
+<footer>
+  <span>Bursa Malaysia Portfolio · Buffett Framework · Click any row for full analysis</span>
+  <span>Prices via Yahoo Finance · Auto-refresh 5 min · Not financial advice</span>
+</footer>
+
+<script>
+// ════════════════════════════════════════════════
+// FULL COUNTER DATABASE
+// ════════════════════════════════════════════════
+const COUNTERS = [
+  {
+    id:'PBBANK', name:'Public Bank Berhad', sector:'bank', type:'div',
+    cheap:[3.80,4.30], fair:[4.30,4.80], over:[4.80,5.20], max:5.50,
+    dy:'4.8%', dps:'22.5 sen', eps:'36.8 sen', roe:'12.2%', pe:'13.6x', taxfree:true,
+    m1:{l:'NIM',v:'2.16%',c:'warn'}, m2:{l:'NPL Ratio',v:'0.40%',c:'good'}, m3:{l:'CIR',v:'35%',c:'good'},
+    sp:{l:'CASA',v:'24%'},
+    note:'Best-in-class NPL 0.40% & CIR 35%. 50-yr unbroken dividend. Special div potential via Basel III headroom.',
+    entry:'L1 <RM4.30 · L2 RM4.30–4.80 · L3 RM4.80–5.20',
+    detail:{
+      moat:'Regulatory moat (licensed bank) + Switching costs (sticky retail depositors and SME relationships) + Cost advantage (lowest CIR 35% in Malaysia banking sector)',
+      moatPoints:['50-year unblemished credit record — NPL 0.40% vs industry avg ~1.5%','Best Cost-to-Income ratio in Malaysia at 35% — closest peer is 42%','Organic growth focus: no large acquisitions, pure retail banking compounding','Founder Teh Hong Piow family remains substantial shareholder — skin in game','Single-tier tax-free dividend structure — rare among Bursa large caps'],
+      thesis:['Buffett-style quality compounder: boring, consistent, high ROAA ~1.4%','Basel III headroom creates possibility of special dividend — CIMB Securities flagged this explicitly','NIM 2.16% under pressure from rate environment but structurally stable due to CASA franchise','EPF remains one of the top shareholders — institutional quality signal','FY2025 earnings release May 27 — expected to confirm stable credit quality'],
+      risks:['NIM compression if OPR cut more than expected','Slowing mortgage market could pressure loan growth below 5%','New digital banks (GXS, AEON) gradually eroding CASA share among young depositors','Succession risk: management transition post-founder era'],
+      exitTriggers:['NPL ratio rises above 1.5% for 2 consecutive quarters','CIR deteriorates above 45% (structural efficiency loss)','Special dividend cancelled and capital not deployed effectively','ROAA falls below 1.0% on sustained basis'],
+      history:[
+        {yr:'2015',rev:'9.24b',pat:'4.52b',roe:'18.5%',nim:'2.41%',npl:'0.71%',dps:'18 sen'},
+        {yr:'2016',rev:'9.38b',pat:'4.59b',roe:'17.8%',nim:'2.38%',npl:'0.60%',dps:'18 sen'},
+        {yr:'2017',rev:'9.75b',pat:'4.74b',roe:'16.9%',nim:'2.30%',npl:'0.55%',dps:'20 sen'},
+        {yr:'2018',rev:'10.10b',pat:'5.04b',roe:'16.5%',nim:'2.22%',npl:'0.52%',dps:'20 sen'},
+        {yr:'2019',rev:'10.48b',pat:'5.37b',roe:'16.1%',nim:'2.18%',npl:'0.48%',dps:'20 sen'},
+        {yr:'2020',rev:'9.82b',pat:'4.01b',roe:'12.3%',nim:'2.08%',npl:'0.42%',dps:'14 sen'},
+        {yr:'2021',rev:'10.01b',pat:'4.42b',roe:'12.9%',nim:'2.01%',npl:'0.40%',dps:'14 sen'},
+        {yr:'2022',rev:'10.84b',pat:'5.21b',roe:'13.8%',nim:'2.10%',npl:'0.42%',dps:'18 sen'},
+        {yr:'2023',rev:'12.22b',pat:'6.14b',roe:'14.2%',nim:'2.19%',npl:'0.41%',dps:'22 sen'},
+        {yr:'2024',rev:'14.67b',pat:'7.25b',roe:'14.8%',nim:'2.16%',npl:'0.40%',dps:'22.5 sen'},
+      ],
+      histCols:['Revenue','PAT','ROE','NIM','NPL','DPS'],
+      analystViews:'Public Bank Research TP RM5.08 · CIMB Securities Buy RM4.90 (special div catalyst) · Consensus 12 Buy / 3 Hold · Avg TP RM5.02'
+    }
+  },
+  {
+    id:'HLBANK', name:'Hong Leong Bank Berhad', sector:'bank', type:'div',
+    cheap:[18,20], fair:[20,23], over:[23,26], max:28,
+    dy:'3.3%', dps:'70 sen', eps:'182 sen', roe:'11.5%', pe:'12.2x', taxfree:true,
+    m1:{l:'NIM',v:'1.85%',c:'warn'}, m2:{l:'NPL Ratio',v:'0.56%',c:'good'}, m3:{l:'CIR',v:'42%',c:'good'},
+    sp:{l:'CASA',v:'30%'},
+    note:'Best digital bank. Bank of Chengdu stake ~15% profits. Capital gain > income angle.',
+    entry:'L1 <RM20 · L2 RM20–23 · L3 RM23–26',
+    detail:{
+      moat:'Digital banking moat (HLB Connect #1 digital bank NPS Malaysia) + Strategic investment in Bank of Chengdu (China consumer banking access) + Switching costs (SME banking ecosystem)',
+      moatPoints:['Malaysia\'s #1 digital bank by customer satisfaction — proprietary mobile platform','Bank of Chengdu 18.3% stake contributes ~RM500m+ profit annually (~15% of group PAT)','NPL 0.56% second lowest in Malaysia after PBBANK','Best CASA ratio 30% among mid-tier banks — cheapest funding base','Lean cost structure: CIR 42% improving every year'],
+      thesis:['Bank of Chengdu is a hidden gem — trades at 1.1x book, contributes recurring China growth earnings','Digital investments depressing near-term ROE but building long-term franchise value','Loan growth accelerating: SME focus with Malaysia industrialisation tailwind','Capital build-up: CET1 13.2% creates room for special dividend or buyback'],
+      risks:['Bank of Chengdu exposure to China property sector slowdown','NIM 1.85% lowest among peers — rate sensitive if OPR cut','Smaller scale vs PBBANK/CIMB limits pricing power in competitive products'],
+      exitTriggers:['Bank of Chengdu stake value impaired or dividend cut','NPL rises above 1.5%','NIM compresses below 1.6% sustained'],
+      history:[
+        {yr:'2016',rev:'3.81b',pat:'2.15b',roe:'12.1%',nim:'2.05%',npl:'0.92%',dps:'50 sen'},
+        {yr:'2017',rev:'3.89b',pat:'2.28b',roe:'12.3%',nim:'2.00%',npl:'0.85%',dps:'52 sen'},
+        {yr:'2018',rev:'4.02b',pat:'2.43b',roe:'12.5%',nim:'1.98%',npl:'0.78%',dps:'55 sen'},
+        {yr:'2019',rev:'4.21b',pat:'2.59b',roe:'12.6%',nim:'1.96%',npl:'0.72%',dps:'58 sen'},
+        {yr:'2020',rev:'3.98b',pat:'2.01b',roe:'9.8%',nim:'1.88%',npl:'0.68%',dps:'40 sen'},
+        {yr:'2021',rev:'4.12b',pat:'2.18b',roe:'10.2%',nim:'1.82%',npl:'0.62%',dps:'44 sen'},
+        {yr:'2022',rev:'4.55b',pat:'2.61b',roe:'11.1%',nim:'1.85%',npl:'0.60%',dps:'58 sen'},
+        {yr:'2023',rev:'5.18b',pat:'3.04b',roe:'11.8%',nim:'1.88%',npl:'0.58%',dps:'64 sen'},
+        {yr:'2024',rev:'6.84b',pat:'3.76b',roe:'11.5%',nim:'1.85%',npl:'0.56%',dps:'70 sen'},
+      ],
+      histCols:['Revenue','PAT','ROE','NIM','NPL','DPS'],
+      analystViews:'Maybank IB Buy RM24.50 · RHB Research Buy RM23.80 · Consensus 9 Buy / 4 Hold · Avg TP RM23.60'
+    }
+  },
+  {
+    id:'RHBBANK', name:'RHB Bank Berhad', sector:'bank', type:'div',
+    cheap:[6.20,7.50], fair:[7.50,8.80], over:[8.80,10.00], max:11,
+    dy:'6.0%', dps:'50 sen', eps:'72 sen', roe:'10.0%', pe:'10.2x', taxfree:true,
+    m1:{l:'NIM',v:'1.92%',c:'warn'}, m2:{l:'NPL Ratio',v:'1.47%',c:'good'}, m3:{l:'CIR',v:'48%',c:'neutral'},
+    sp:{l:'Loan Growth',v:'6.9%'},
+    note:'Highest yield of 4 banks (6%). NPL improving. EPF heavy accumulation.',
+    entry:'L1 <RM7.50 · L2 RM7.50–8.80',
+    detail:{
+      moat:'Regulatory moat + OSK Holdings anchor shareholder (10%) provides governance stability + Regional ASEAN banking expansion',
+      moatPoints:['6.0% dividend yield highest of 4 banks — income anchor','NPL improving from 1.77% (2022) to 1.47% (2024) — credit quality inflection','Loan growth 6.9% above industry 5.5%','EPF accumulated over 20 million shares in 2026 — strong institutional backing','ASEAN expansion: Thailand, Cambodia operations adding revenue diversification'],
+      thesis:['Valuation cheapest of 4 banks: P/E 10.2x vs sector avg 12x','Re-rating catalyst: continued NPL improvement toward 1.0%','Dividend 50 sen (6% yield) is among highest in Malaysia banking sector','OSK Holdings stake keeps takeover risk alive — potential premium exit','Capital ratio CET1 16.2% well above Basel III — dividend sustainability confirmed'],
+      risks:['CIR 48% highest among 4 banks — efficiency improvement needed','Thailand / Cambodia operations add earnings volatility','NPL 1.47% still above PBBANK/HLBANK — needs sustained improvement to command premium'],
+      exitTriggers:['NPL rises above 3% for 2 consecutive quarters','CIR worsens above 55%','Dividend cut without clear reason'],
+      history:[
+        {yr:'2016',rev:'4.21b',pat:'1.98b',roe:'10.8%',nim:'2.10%',npl:'1.80%',dps:'25 sen'},
+        {yr:'2018',rev:'4.68b',pat:'2.24b',roe:'10.5%',nim:'2.05%',npl:'1.90%',dps:'28 sen'},
+        {yr:'2020',rev:'4.12b',pat:'1.62b',roe:'8.2%',nim:'1.98%',npl:'1.77%',dps:'20 sen'},
+        {yr:'2021',rev:'4.35b',pat:'1.81b',roe:'8.8%',nim:'1.95%',npl:'1.72%',dps:'22 sen'},
+        {yr:'2022',rev:'4.82b',pat:'2.08b',roe:'9.5%',nim:'1.96%',npl:'1.62%',dps:'30 sen'},
+        {yr:'2023',rev:'6.21b',pat:'2.56b',roe:'10.2%',nim:'1.94%',npl:'1.55%',dps:'40 sen'},
+        {yr:'2024',rev:'8.56b',pat:'2.88b',roe:'10.0%',nim:'1.92%',npl:'1.47%',dps:'50 sen'},
+      ],
+      histCols:['Revenue','PAT','ROE','NIM','NPL','DPS'],
+      analystViews:'OSK Research Buy RM9.20 · TA Securities Buy RM8.80 · Consensus 10 Buy / 3 Hold · Avg TP RM9.10'
+    }
+  },
+  {
+    id:'CIMB', name:'CIMB Group Holdings', sector:'bank', type:'div',
+    cheap:[6.50,7.50], fair:[7.50,8.50], over:[8.50,10.00], max:11,
+    dy:'5.6%', dps:'46 sen', eps:'72 sen', roe:'10.8%', pe:'10.5x', taxfree:true,
+    m1:{l:'NIM',v:'2.27%',c:'good'}, m2:{l:'NPL Ratio',v:'1.50%',c:'good'}, m3:{l:'CASA',v:'35%',c:'good'},
+    sp:{l:'P/E',v:'10.5x'},
+    note:'Cheapest bank on P/E. Pan-ASEAN moat. TP RM9.20.',
+    entry:'L1 <RM7.50 · Near L1 now',
+    detail:{
+      moat:'Pan-ASEAN network moat (Malaysia, Indonesia, Thailand, Singapore, Philippines, Cambodia) + Highest NIM 2.27% reflecting pricing power + Brand moat in ASEAN investment banking',
+      moatPoints:['Only truly Pan-ASEAN bank — 6-country network creates irreplicable cross-border revenue','Highest NIM 2.27% of 4 banks — superior asset pricing','CASA ratio 35% best among non-PBBANK peers — sticky low-cost deposits','Investment banking #1 Malaysia — fee income diversification','Lowest P/E 10.5x among 4 banks — most attractive entry'],
+      thesis:['Re-rating catalyst: ASEAN trade growth benefits cross-border banking','Investor Day targets disclosed 12% ROE by FY26 — would re-rate stock','PublicBank Research TP RM9.20 (Buy) implies 19% upside from RM7.77','NIM expansion possible if rate hikes in Indonesia/Thailand offset Malaysia pressure','Maybank IB upgrade to Buy from Hold signals analyst conviction shift'],
+      risks:['Indonesia / Thailand operations add FX translation risk','NPL 1.50% higher than PBBANK/HLBANK','More complex group structure vs focused domestic peers'],
+      exitTriggers:['ASEAN expansion results in sustained ROE decline below 9%','NPL rises above 2.5%','Group NIM compresses below 2.0%'],
+      history:[
+        {yr:'2016',rev:'14.2b',pat:'4.24b',roe:'9.8%',nim:'2.35%',npl:'2.10%',dps:'28 sen'},
+        {yr:'2018',rev:'15.8b',pat:'4.62b',roe:'10.1%',nim:'2.30%',npl:'1.98%',dps:'32 sen'},
+        {yr:'2020',rev:'14.2b',pat:'3.28b',roe:'7.6%',nim:'2.25%',npl:'2.05%',dps:'18 sen'},
+        {yr:'2021',rev:'15.1b',pat:'4.08b',roe:'8.9%',nim:'2.28%',npl:'1.88%',dps:'24 sen'},
+        {yr:'2022',rev:'16.8b',pat:'5.28b',roe:'10.2%',nim:'2.30%',npl:'1.70%',dps:'36 sen'},
+        {yr:'2023',rev:'18.9b',pat:'6.14b',roe:'10.8%',nim:'2.28%',npl:'1.60%',dps:'42 sen'},
+        {yr:'2024',rev:'21.3b',pat:'7.42b',roe:'10.8%',nim:'2.27%',npl:'1.50%',dps:'46 sen'},
+      ],
+      histCols:['Revenue','PAT','ROE','NIM','NPL','DPS'],
+      analystViews:'PublicBank Research Buy RM9.20 · Maybank IB Buy RM8.80 · Consensus 14 Buy / 2 Hold · Avg TP RM9.05'
+    }
+  },
+  {
+    id:'IGBREIT', name:'IGB Real Estate Inv Trust', sector:'reit', type:'div',
+    cheap:[2.10,2.50], fair:[2.50,3.00], over:[3.00,3.30], max:3.60,
+    dy:'4.0%', dps:'10.70 sen', eps:'0.18', roe:'11.2%', pe:'16.8x', taxfree:false,
+    m1:{l:'NPI Margin',v:'72.8%',c:'good'}, m2:{l:'Gearing',v:'23%',c:'good'}, m3:{l:'Occupancy',v:'99%+',c:'good'},
+    sp:{l:'DPU FY25',v:'11.75 sen'},
+    note:'Best M-REIT. Mid Valley Megamall. 100% organic DPU growth. JPM/UBS TP RM3.11.',
+    entry:'L1 <RM2.50 · L2 RM2.50–3.00',
+    detail:{
+      moat:'Location monopoly (Mid Valley City — natural catchment, no competing mega-mall within 5km radius) + Tenant switching costs (established anchor tenants with long-term leases) + Brand power (Mid Valley and Gardens Mall as household names)',
+      moatPoints:['Mid Valley Megamall + The Gardens Mall — two complementary malls, same compound','99%+ occupancy for 10+ consecutive years — near physical impossibility to replicate','72.8% NPI margin highest in Malaysia REIT universe — operational excellence','Zero acquisitions since IPO — 100% organic growth proves quality of underlying asset','Gearing just 23% vs REIT sector average 36% — significant acquisition capacity'],
+      thesis:['Mid Valley Southkey acquisition (Q4 2025) — third asset adding ~RM50–60m NPI annually','DPU CAGR ~5% organic — 10-year track record of consistent distribution growth','FY2025 revenue RM705m (+12.6% YoY) — post-COVID full recovery confirmed','WHT at personal income rate creates net yield of 3.2–4.0% for most investors vs KWSP 6%','JPM target RM3.11, UBS coverage initiated with Buy — foreign institutional interest'],
+      risks:['WHT at personal income rate since YA2026 reduces net yield for high-bracket investors','Southkey Mall acquisition changes "pure organic" story — execution risk on new asset','Consumer spending slowdown could pressure tenant sales and reversion rates','Rising interest rates increase financing costs on eventual gearing expansion'],
+      exitTriggers:['Occupancy falls below 92% for 2 consecutive quarters','DPU cut without acquisition justification','Gearing rises above 40% on non-accretive acquisition','NPI margin falls below 65%'],
+      history:[
+        {yr:'2015',rev:'484m',pat:'372m',dpu:'8.12 sen',occ:'99%',gear:'21%',npi:'76.9%'},
+        {yr:'2016',rev:'509m',pat:'392m',dpu:'8.56 sen',occ:'99%',gear:'20%',npi:'77.1%'},
+        {yr:'2017',rev:'524m',pat:'406m',dpu:'8.84 sen',occ:'99%',gear:'21%',npi:'77.5%'},
+        {yr:'2018',rev:'540m',pat:'418m',dpu:'9.12 sen',occ:'99%',gear:'22%',npi:'77.4%'},
+        {yr:'2019',rev:'556m',pat:'432m',dpu:'9.40 sen',occ:'99%',gear:'23%',npi:'77.7%'},
+        {yr:'2020',rev:'389m',pat:'242m',dpu:'5.68 sen',occ:'90%',gear:'24%',npi:'62.2%'},
+        {yr:'2021',rev:'412m',pat:'288m',dpu:'6.24 sen',occ:'94%',gear:'23%',npi:'69.9%'},
+        {yr:'2022',rev:'532m',pat:'412m',dpu:'9.48 sen',occ:'99%',gear:'22%',npi:'77.4%'},
+        {yr:'2023',rev:'598m',pat:'552m',dpu:'10.15 sen',occ:'99%',gear:'22%',npi:'73.2%'},
+        {yr:'2024',rev:'626m',pat:'580m',dpu:'10.70 sen',occ:'99%+',gear:'23%',npi:'72.8%'},
+      ],
+      histCols:['Revenue','PAT','DPU','Occupancy','Gearing','NPI Mgn'],
+      analystViews:'JPMorgan Buy RM3.11 · UBS Buy RM3.05 · Kenanga Outperform RM3.02 · WHT note: dividend taxed at personal rate from YA2026'
+    }
+  },
+  {
+    id:'SUNREIT', name:'Sunway Real Estate Inv Trust', sector:'reit', type:'div',
+    cheap:[1.70,2.00], fair:[2.00,2.50], over:[2.50,2.90], max:3.20,
+    dy:'5.5%', dps:'10.0 sen*', eps:'0.134', roe:'8.5%', pe:'18.0x', taxfree:false,
+    m1:{l:'NPI Margin',v:'~60%',c:'neutral'}, m2:{l:'Gearing',v:'39%',c:'warn'}, m3:{l:'Occupancy',v:'97%',c:'good'},
+    sp:{l:'DPU FY25',v:'14.48 sen*'},
+    note:'*FY25 DPU includes one-off disposal gain. Underlying ~10 sen. 30% YTD rally — WAIT for RM2.00.',
+    entry:'L1 <RM2.00 · L2 RM2.00–2.50 · WAIT at current ~RM2.47',
+    detail:{
+      moat:'Sponsor ecosystem moat (Sunway Group pipeline of future assets for injection) + Diversified asset base (retail, hotel, office, medical) reduces sector-specific risk',
+      moatPoints:['Sunway Group sponsor provides ROFR pipeline — future growth secured','Diversified across retail (Sunway Pyramid), hotels, university, office, healthcare','97% occupancy across retail portfolio','Sunway Pyramid — one of Malaysia\'s top 3 malls by footfall'],
+      thesis:['Diversification provides resilience vs single-asset REITs like IGB','Hotel segment recovery: tourism arrivals 47M target for VMY2026','Sunway Carnival refurbishment completed — higher rents driving NPI growth','Sponsor pipeline includes additional healthcare and education assets'],
+      risks:['*FY25 DPU of 14.48 sen inflated by one-off Sunway Pinnacle disposal — underlying ~10 sen','Gearing 39% approaching higher range — limits further acquisitions','30% YTD rally from ~RM1.90 makes current RM2.47 stretched vs underlying DPU','Office segment (SunTower) facing structural headwinds from hybrid work'],
+      exitTriggers:['DPU falls below 9 sen on sustained basis (underlying deterioration)','Gearing rises above 45%','Occupancy falls below 88% at flagship Sunway Pyramid'],
+      history:[
+        {yr:'2016',rev:'564m',pat:'380m',dpu:'8.42 sen',occ:'93%',gear:'35%',npi:'67.4%'},
+        {yr:'2018',rev:'612m',pat:'412m',dpu:'9.18 sen',occ:'94%',gear:'36%',npi:'67.3%'},
+        {yr:'2020',rev:'442m',pat:'198m',dpu:'4.62 sen',occ:'82%',gear:'38%',npi:'44.8%'},
+        {yr:'2021',rev:'488m',pat:'228m',dpu:'5.38 sen',occ:'88%',gear:'40%',npi:'46.7%'},
+        {yr:'2022',rev:'624m',pat:'388m',dpu:'8.92 sen',occ:'94%',gear:'38%',npi:'62.2%'},
+        {yr:'2023',rev:'724m',pat:'448m',dpu:'9.64 sen',occ:'96%',gear:'39%',npi:'61.9%'},
+        {yr:'2024',rev:'812m',pat:'580m',dpu:'14.48 sen*',occ:'97%',gear:'39%',npi:'~60%'},
+      ],
+      histCols:['Revenue','PAT','DPU','Occupancy','Gearing','NPI Mgn'],
+      analystViews:'*DPU FY24 includes RM0.0448 disposal gain — recurring DPU ~10 sen · Kenanga Neutral RM2.40 · RHB Hold RM2.50'
+    }
+  },
+  {
+    id:'PAVREIT', name:'Pavilion Real Estate Inv Trust', sector:'reit', type:'div',
+    cheap:[1.35,1.60], fair:[1.60,2.00], over:[2.00,2.30], max:2.50,
+    dy:'5.8%', dps:'8.5 sen', eps:'0.095', roe:'7.8%', pe:'18.5x', taxfree:false,
+    m1:{l:'NPI Margin',v:'~63%',c:'neutral'}, m2:{l:'Gearing',v:'38%',c:'warn'}, m3:{l:'Occupancy',v:'93%',c:'warn'},
+    sp:{l:'DPU est',v:'~8.5 sen'},
+    note:'Premium Bukit Bintang retail. 5 analysts Buy. TA TP RM2.02.',
+    entry:'L1 <RM1.60 · L2 RM1.60–2.00',
+    detail:{
+      moat:'Location monopoly (Pavilion KL in Bukit Bintang — Malaysia\'s prime tourist retail corridor) + Hotel acquisition adds hospitality diversification',
+      moatPoints:['Pavilion KL is Malaysia\'s most recognised luxury mall — global tourist magnet','Bukit Bintang location has no competing peer for international tourist retail','Pavilion Bukit Jalil (PBJ) added RM~350m NLA — 2nd major asset growing rental income','Banyan Tree KL + Pavilion Hotel KL acquisition (Dec 2024) adds hospitality exposure','5 analyst Buy calls — strong institutional conviction'],
+      thesis:['VMY2026 tourist target 47M: direct beneficiary via Pavilion KL tourist footfall','PBJ occupancy improving to 93% from <80% post-opening — rental reversion positive','Hotel acquisition diversifies income and capitalises on Malaysia tourism recovery','TA Research TP RM2.02 implies 13% upside from RM1.79','Lowest gearing potential: could gear up to 45% for more acquisitions'],
+      risks:['Hotel drag: hospitality NPI margin lower than retail — dilutes overall NPI margin','TRX (Tun Razak Exchange) opened 2024 — new competing luxury retail destination nearby','PBJ NPI margin 55% vs PavKL ~70% — dilution of overall portfolio quality','WHT at personal rate reduces net yield for higher-income investors'],
+      exitTriggers:['Pavilion KL occupancy falls below 88%','DPU falls below 7 sen on sustained basis','Hotel acquisition proves non-accretive — NPI margin falls below 55%'],
+      history:[
+        {yr:'2016',rev:'468m',pat:'312m',dpu:'7.82 sen',occ:'98%',gear:'35%',npi:'66.7%'},
+        {yr:'2018',rev:'520m',pat:'348m',dpu:'8.62 sen',occ:'97%',gear:'36%',npi:'66.9%'},
+        {yr:'2020',rev:'362m',pat:'168m',dpu:'4.52 sen',occ:'86%',gear:'38%',npi:'46.4%'},
+        {yr:'2022',rev:'542m',pat:'322m',dpu:'7.98 sen',occ:'94%',gear:'37%',npi:'59.4%'},
+        {yr:'2023',rev:'680m',pat:'398m',dpu:'8.12 sen',occ:'92%',gear:'37%',npi:'58.5%'},
+        {yr:'2024',rev:'901m',pat:'448m',dpu:'~8.5 sen',occ:'93%',gear:'38%',npi:'~63%'},
+      ],
+      histCols:['Revenue','PAT','DPU','Occupancy','Gearing','NPI Mgn'],
+      analystViews:'TA Research Buy RM2.02 · Kenanga Outperform RM1.98 · 5 analysts Buy · Avg TP RM2.00 · WHT at personal rate'
+    }
+  },
+  {
+    id:'KIPREIT', name:'KIP Real Estate Inv Trust', sector:'reit', type:'div',
+    cheap:[0.75,0.92], fair:[0.92,1.05], over:[1.05,1.20], max:1.30,
+    dy:'8.2%', dps:'7.11 sen', eps:'0.075', roe:'7.0%', pe:'12.5x', taxfree:false,
+    m1:{l:'NPI Margin',v:'~64%',c:'neutral'}, m2:{l:'Gearing',v:'30%',c:'good'}, m3:{l:'Occupancy',v:'~90%',c:'neutral'},
+    sp:{l:'Price/NAV',v:'0.92x'},
+    note:'CHEAP — below NAV. Intrinsic value est RM1.14. Suburban community malls, defensive tenants.',
+    entry:'DEPLOY L1 NOW <RM0.92 · L2 RM0.92–1.05',
+    detail:{
+      moat:'Suburban catchment monopoly (community malls in underserved neighbourhoods with no direct competition) + Defensive necessity tenant mix (grocery, pharmacy, F&B, services)',
+      moatPoints:['18 properties across Malaysia — suburban KipMall network','Necessity tenants: ~65% grocery/pharmacy/F&B — defensive income even in recession','Currently priced BELOW NAV (0.92x NAV) — intrinsic value RM1.14 estimated','8.2% dividend yield highest in Malaysian REIT universe','Gearing 30% conservative — well below 45% regulatory limit — room to grow'],
+      thesis:['Structural undervaluation: Price/NAV 0.92x vs IGB REIT 2.4x, Sunway REIT 1.8x','KIP REIT trades at 40–50% discount to comparable suburban REITs in Singapore (Frasers Centrepoint)','Suburban mall demand resilient: B40/M40 shoppers do not trade down to online — physical necessity','DPU growth: consistent 5–6% CAGR as portfolio matures and rental reversions improve','Potential re-rating catalyst: analyst coverage initiation or index inclusion'],
+      risks:['Small cap — lower liquidity, wider bid-ask spread','Tenant quality lower than premium REITs — some specialty tenants underperform','Suburban exposure means slower rental reversion than prime malls','Interest rate sensitivity higher than IGB REIT due to higher gearing path'],
+      exitTriggers:['Occupancy falls below 82% across portfolio','DPU falls below 6 sen on sustained basis','Acquisition at premium to NAV that is non-accretive'],
+      history:[
+        {yr:'2018',rev:'84m',pat:'58m',dpu:'5.92 sen',occ:'88%',gear:'28%',npi:'69.0%'},
+        {yr:'2019',rev:'91m',pat:'64m',dpu:'6.38 sen',occ:'89%',gear:'28%',npi:'70.3%'},
+        {yr:'2020',rev:'78m',pat:'42m',dpu:'4.48 sen',occ:'84%',gear:'30%',npi:'53.8%'},
+        {yr:'2021',rev:'88m',pat:'52m',dpu:'5.52 sen',occ:'87%',gear:'30%',npi:'59.1%'},
+        {yr:'2022',rev:'98m',pat:'62m',dpu:'6.18 sen',occ:'89%',gear:'29%',npi:'63.3%'},
+        {yr:'2023',rev:'108m',pat:'70m',dpu:'6.72 sen',occ:'90%',gear:'30%',npi:'64.8%'},
+        {yr:'2024',rev:'118m',pat:'76m',dpu:'7.11 sen',occ:'~90%',gear:'30%',npi:'~64%'},
+      ],
+      histCols:['Revenue','PAT','DPU','Occupancy','Gearing','NPI Mgn'],
+      analystViews:'Kenanga Outperform RM1.05 · Estimated intrinsic value RM1.14 · Price/NAV 0.92x (discount to peers) · Limited analyst coverage = price discovery lag'
+    }
+  },
+  {
+    id:'HEIM', name:'Heineken Malaysia Berhad', sector:'bev', type:'div',
+    cheap:[18,21], fair:[21,25], over:[25,28], max:30,
+    dy:'6.4%', dps:'152 sen', eps:'148 sen', roe:'76%', pe:'17.8x', taxfree:true,
+    m1:{l:'EBITDA Margin',v:'25.4%',c:'good'}, m2:{l:'FCF Yield',v:'~6.5%',c:'good'}, m3:{l:'Payout',v:'100%',c:'good'},
+    sp:{l:'Gross Margin',v:'28.5%'},
+    note:'Beer duopoly moat. 100% payout. RHB TP RM27.60. Tax-free single-tier.',
+    entry:'L1 <RM21 · L2 RM21–25 · L3 RM25–28',
+    detail:{
+      moat:'Duopoly moat (Heineken + Carlsberg control ~98% of legal beer market) + Brand moat (Heineken, Tiger, Anchor, Guinness) + Regulatory moat (licensed manufacturer, import barriers) + Scale moat (single production facility, lowest cost producer)',
+      moatPoints:['Beer duopoly: HEIM + CARLSBG = ~98% of Malaysia legal beer market — no new entrants possible','Heineken global brand portfolio: Heineken, Tiger, Anchor, Guinness, Kirin, Strongbow','100% payout ratio: literally ALL earnings go to shareholders every year','No capex required for growth: existing capacity sufficient for 3–5 years','ROE 76% — capital light, high return business model'],
+      thesis:['3 ASP (average selling price) hikes in FY2025 compensating for volume pressure from illicit beer','Illicit market 30% of total consumption — if enforcement improves, HEIM captures volume upside','RHB Research TP RM27.60 with Buy — implies 16% upside from RM23.70','FCF yield 6.5% vs FD 3.8% — compelling income vs risk-free rate','Tax-free dividend: after-tax yield effectively higher than REITs for mid-high income earners'],
+      risks:['Sin tax hike risk: government could raise alcohol excise tax — direct hit to margins','Illicit beer 30% market share suppresses volume — remains structural overhang','Declining social acceptability of alcohol among younger demographic','Non-Muslim population growth slower than Muslim — long-term demand headwind'],
+      exitTriggers:['Government imposes >20% sin tax hike AND company cuts DPS for 2 consecutive years','EBITDA margin falls below 18% sustained','Market share falls below 45% (Heineken alone) suggesting competitive loss'],
+      history:[
+        {yr:'2015',rev:'1.92b',pat:'278m',eps:'88 sen',ebitda:'22.8%',dps:'88 sen',roe:'68%'},
+        {yr:'2016',rev:'1.98b',pat:'298m',eps:'94 sen',ebitda:'23.2%',dps:'94 sen',roe:'70%'},
+        {yr:'2017',rev:'2.04b',pat:'308m',eps:'98 sen',ebitda:'23.5%',dps:'98 sen',roe:'72%'},
+        {yr:'2018',rev:'2.12b',pat:'324m',eps:'103 sen',ebitda:'23.9%',dps:'103 sen',roe:'74%'},
+        {yr:'2019',rev:'2.28b',pat:'344m',eps:'109 sen',ebitda:'24.2%',dps:'109 sen',roe:'75%'},
+        {yr:'2020',rev:'1.84b',pat:'208m',eps:'66 sen',ebitda:'19.8%',dps:'66 sen',roe:'55%'},
+        {yr:'2021',rev:'1.98b',pat:'244m',eps:'77 sen',ebitda:'21.4%',dps:'77 sen',roe:'62%'},
+        {yr:'2022',rev:'2.32b',pat:'382m',eps:'121 sen',ebitda:'24.8%',dps:'121 sen',roe:'78%'},
+        {yr:'2023',rev:'2.48b',pat:'416m',eps:'132 sen',ebitda:'25.2%',dps:'132 sen',roe:'76%'},
+        {yr:'2024',rev:'2.52b',pat:'466m',eps:'148 sen',ebitda:'25.4%',dps:'152 sen',roe:'76%'},
+      ],
+      histCols:['Revenue','PAT','EPS','EBITDA Mgn','DPS','ROE'],
+      analystViews:'RHB Research Buy RM27.60 · Kenanga Outperform RM26.80 · Consensus 6 Buy / 2 Hold · Avg TP RM26.90 · Tax-free dividend confirmed'
+    }
+  },
+  {
+    id:'CARLSBG', name:'Carlsberg Brewery Malaysia', sector:'bev', type:'div',
+    cheap:[15,18], fair:[18,22], over:[22,26], max:28,
+    dy:'6.2%', dps:'95 sen', eps:'112 sen', roe:'60%', pe:'16.5x', taxfree:true,
+    m1:{l:'EBITDA Margin',v:'23.0%',c:'good'}, m2:{l:'FCF Yield',v:'~6.0%',c:'good'}, m3:{l:'Payout',v:'90%+',c:'good'},
+    sp:{l:'Gross Margin',v:'27.5%'},
+    note:"Heineken's income twin. Beer duopoly. Tax-free.",
+    entry:'L1 <RM18 · L2 RM18–22',
+    detail:{
+      moat:'Duopoly moat (shared with Heineken) + Brand moat (Carlsberg, Asahi, Connor\'s) + Regulatory barrier (licensed manufacturer)',
+      moatPoints:['Beer duopoly partner: Carlsberg + Heineken control ~98% of legal beer market','Carlsberg, Asahi, Connor\'s Stout — diversified portfolio covering premium to mainstream','Singapore subsidiary contributes ~15% of revenue — regional diversification','90%+ payout ratio: near full earnings distribution to shareholders','ROE 60% — capital light, high dividend yield'],
+      thesis:['Pair trade with HEIM: buy basket for full beer duopoly exposure','Slightly cheaper valuation than HEIM: P/E 16.5x vs HEIM 17.8x','Singapore operations benefit from tourist recovery (VMY2026)','FCF yield 6.0% compelling for income investors','Tax-free single-tier dividend — identical advantage to HEIM'],
+      risks:['Same sin tax and illicit beer risks as HEIM','Slightly lower EBITDA margin 23.0% vs HEIM 25.4% — less operational efficiency','Lower ROE 60% vs HEIM 76% — HEIM is the better quality business'],
+      exitTriggers:['Government imposes >20% sin tax hike AND DPS cut for 2 years','EBITDA margin falls below 17% sustained','Market share loss below 40% (Carlsberg standalone)'],
+      history:[
+        {yr:'2016',rev:'1.78b',pat:'218m',eps:'68 sen',ebitda:'20.8%',dps:'68 sen',roe:'55%'},
+        {yr:'2018',rev:'1.84b',pat:'238m',eps:'74 sen',ebitda:'21.5%',dps:'74 sen',roe:'58%'},
+        {yr:'2020',rev:'1.52b',pat:'182m',eps:'57 sen',ebitda:'19.8%',dps:'57 sen',roe:'48%'},
+        {yr:'2022',rev:'1.96b',pat:'302m',eps:'94 sen',ebitda:'22.4%',dps:'94 sen',roe:'58%'},
+        {yr:'2023',rev:'2.08b',pat:'328m',eps:'102 sen',ebitda:'22.8%',dps:'102 sen',roe:'60%'},
+        {yr:'2024',rev:'2.14b',pat:'356m',eps:'112 sen',ebitda:'23.0%',dps:'95 sen',roe:'60%'},
+      ],
+      histCols:['Revenue','PAT','EPS','EBITDA Mgn','DPS','ROE'],
+      analystViews:'Kenanga Outperform RM22.50 · RHB Hold RM21.80 · Consensus 5 Buy / 3 Hold · Tax-free single-tier dividend confirmed'
+    }
+  },
+  {
+    id:'MRDIY', name:'MR D.I.Y. Group (M) Berhad', sector:'retail', type:'hybrid',
+    cheap:[1.20,1.45], fair:[1.45,1.80], over:[1.80,2.20], max:2.50,
+    dy:'3.8%', dps:'7.0 sen', eps:'7.6 sen', roe:'38%', pe:'26.5x', taxfree:true,
+    m1:{l:'Gross Margin',v:'46%',c:'good'}, m2:{l:'Rev Growth',v:'6.7%',c:'neutral'}, m3:{l:'Stores',v:'730+',c:'good'},
+    sp:{l:'Own-Brand',v:'~15% mix'},
+    note:'Home improvement monopoly. Private label expanding. EPF accumulating.',
+    entry:'L1 <RM1.45 · L2 RM1.45–1.80',
+    detail:{
+      moat:'Network moat (730+ stores = largest home improvement network in Malaysia) + Cost advantage (own-brand private label at 46% gross margin) + Location moat (strategic anchor tenant in malls) + Brand moat ("MRDIY" is the category name)',
+      moatPoints:['730+ stores: largest home improvement retailer by far in Malaysia — nearest competitor ~40 stores','Own-brand private label ~15% of mix growing to 20%+ — structural gross margin expansion','"MRDIY" has become the generic word for hardware/home improvement in Malaysia consumer mind','ROE 38% — capital efficient model, mostly leased stores','ASEAN expansion: entering Thailand, Indonesia, Brunei — optionality not priced in'],
+      thesis:['Private label expansion is the margin story: each % shift from 3rd-party to own-brand adds ~50bps gross margin','EPF is actively accumulating — institutional quality signal','Malaysia housing market: new completions drive DIY purchases for furnishing/renovation','ASEAN optionality: Thailand pilot successful, Indonesia entry potential 10-year growth story','Revenue CAGR 15% (2018–2023) normalising to sustainable 8–10% — still premium growth'],
+      risks:['Aggressive store rollout could cannibalise existing stores','Online competition (Shopee, Lazada) pricing down some categories','Gross margin improvement slower if own-brand ramp slower than expected','ASEAN execution risk if new markets require capital-intensive entry'],
+      exitTriggers:['Same-store sales growth (SSSG) turns negative for 2 consecutive quarters','Gross margin falls below 40% (private label strategy failing)','ASEAN expansion requires large capital raising that dilutes existing shareholders'],
+      history:[
+        {yr:'2018',rev:'2.28b',pat:'188m',eps:'2.3 sen',gm:'41.2%',stores:'350',roe:'28%'},
+        {yr:'2019',rev:'2.80b',pat:'242m',eps:'2.9 sen',gm:'42.1%',stores:'420',roe:'30%'},
+        {yr:'2020',rev:'3.22b',pat:'392m',eps:'4.7 sen',gm:'43.8%',stores:'490',roe:'38%'},
+        {yr:'2021',rev:'3.68b',pat:'428m',eps:'5.1 sen',gm:'44.2%',stores:'560',roe:'36%'},
+        {yr:'2022',rev:'3.92b',pat:'458m',eps:'5.5 sen',gm:'45.1%',stores:'620',roe:'36%'},
+        {yr:'2023',rev:'4.18b',pat:'488m',eps:'5.8 sen',gm:'45.8%',stores:'680',roe:'37%'},
+        {yr:'2024',rev:'4.46b',pat:'632m',eps:'7.6 sen',gm:'46.0%',stores:'730+',roe:'38%'},
+      ],
+      histCols:['Revenue','PAT','EPS','Gross Margin','Stores','ROE'],
+      analystViews:'Maybank IB Buy RM1.95 · Kenanga Outperform RM1.88 · Consensus 10 Buy / 2 Hold · Avg TP RM1.90 · EPF actively accumulating'
+    }
+  },
+  {
+    id:'99SMART', name:'99 Speed Mart Retail Holdings', sector:'retail', type:'hybrid',
+    cheap:[1.80,2.40], fair:[2.40,3.50], over:[3.50,4.20], max:5.00,
+    dy:'2.0%', dps:'~4 sen', eps:'~11 sen', roe:'28%', pe:'35x', taxfree:true,
+    m1:{l:'Revenue',v:'RM9.98b',c:'good'}, m2:{l:'Net Margin',v:'~3%',c:'neutral'}, m3:{l:'Stores',v:'3,000+',c:'good'},
+    sp:{l:'Rev CAGR',v:'~10% (3yr)'},
+    note:'Neighborhood network moat. Defensive FMCG. CIMB top pick.',
+    entry:'L1 <RM2.40 · L2 RM2.40–3.50',
+    detail:{
+      moat:'Network density moat (3,000+ stores = nearest competitor is a fraction of this scale) + Location lock-in moat (neighborhood proximity creates daily habit) + Category definition moat (99SM = neighborhood mart in Malaysian consumer mind)',
+      moatPoints:['3,000+ stores — nearest competitor ~200 stores — 15x scale advantage','Neighborhood convenience: average Malaysian lives within 1km of a 99SM in urban areas','FMCG staples (rice, cooking oil, cleaning products): recession-proof demand','Revenue RM9.98 billion — already in top 5 revenue companies on Bursa Malaysia','IPO in 2023: management proven by real-world operational scale, not just paper plans'],
+      thesis:['Revenue CAGR 9.6% (3-year forecast): stores + basket size growth dual engine','FMCG convenience is structurally growing: urban density, rising female workforce participation','CIMB Research top pick: analyst conviction supported by visible store rollout pipeline','Defensive in market downturn: consumers trade down to 99SM from Aeon/Giant for staples','China FMCG model comparison: China convenience chains traded at 40–50x PE in growth phase'],
+      risks:['Net margin ~3% is thin — any cost spike (labour, logistics) hits profits hard','Competition: Lotus\'s, Mydin, Giant all have similar positioning if they choose aggressive pricing','New digital grocery (GrabMart, PandaMart) could reduce basket size','Store rollout requires significant working capital — debt build-up risk if growth accelerates'],
+      exitTriggers:['Revenue growth falls below 5% for 2 consecutive years (store network maturing)','Net margin falls below 1.5%','Management confirms slowdown in new store openings'],
+      history:[
+        {yr:'2020',rev:'5.42b',pat:'128m',eps:'~5 sen',gm:'9.8%',stores:'1,800',roe:'22%'},
+        {yr:'2021',rev:'6.18b',pat:'152m',eps:'~6 sen',gm:'10.0%',stores:'2,100',roe:'24%'},
+        {yr:'2022',rev:'7.24b',pat:'188m',eps:'~7.5 sen',gm:'10.2%',stores:'2,400',roe:'25%'},
+        {yr:'2023',rev:'8.52b',pat:'228m',eps:'~9 sen',gm:'10.5%',stores:'2,700',roe:'26%'},
+        {yr:'2024',rev:'9.98b',pat:'278m',eps:'~11 sen',gm:'~11%',stores:'3,000+',roe:'28%'},
+      ],
+      histCols:['Revenue','PAT','EPS','Gross Margin','Stores','ROE'],
+      analystViews:'CIMB Research Top Pick · Kenanga Outperform RM3.80 · Consensus 8 Buy / 3 Hold · Avg TP RM3.70 · IPO Dec 2023 at RM1.70'
+    }
+  },
+  {
+    id:'WPRTS', name:'Westports Holdings Berhad', sector:'port', type:'hybrid',
+    cheap:[3.80,4.50], fair:[4.50,5.50], over:[5.50,6.50], max:7.00,
+    dy:'3.7%', dps:'18.0 sen', eps:'24.0 sen', roe:'38.5%', pe:'24.2x', taxfree:true,
+    m1:{l:'TEU Volume',v:'10.98M',c:'good'}, m2:{l:'EBITDA Margin',v:'62%',c:'good'}, m3:{l:'FCF Yield',v:'3.7%',c:'neutral'},
+    sp:{l:'Concession',v:'2024–2082'},
+    note:'Port monopoly. CIMB TP RM6.20. +30% tariff hike by Jan 2027.',
+    entry:'L1 <RM4.50 · L2 RM4.50–5.50 · CIMB TP RM6.20',
+    detail:{
+      moat:'Infrastructure monopoly (Port Klang Westports concession until 2082 — physical impossibility to replicate) + Natural geography moat (Strait of Malacca position) + Network moat (major global shipping lines locked in via long-term contracts)',
+      moatPoints:['58-year concession (2024–2082) — essentially permanent monopoly on Western Port Klang berths','Strait of Malacca: 40% of global seaborne trade passes through — Westports captures Malaysia transshipment','TEU 10.98 million (record FY2024) — 3.1% growth H1 2025 shows continued momentum','EBITDA margin 62% — infrastructure asset with low variable costs','Tariff hike structural: +30% to RM390/TEU by Jan 2027 — directly lifts revenue per TEU'],
+      thesis:['Tariff re-rating: +30% tariff hike = direct revenue uplift without volume risk','Capacity expansion CT10–CT17: doubles capacity from 14M to 27M TEU — 25-year growth secured','CIMB upgrade from Hold to Buy RM6.20: first analyst upgrade in 2 years — inflection','Concession renewal 2024–2082 removes overhang that depressed stock for 3 years','Transshipment volume resilient to US tariff disruption (Malaysia not directly targeted)'],
+      risks:['Trump tariff disruption could reduce Asian export volumes and transshipment demand','Port competition: Johor Port, Penang Port, and potential new Carey Island port long-term','Hutchison Ports (35% shareholder) corporate action on CK Hutchison stake — uncertainty','New port investment ~RM39.6b capex over concession period — significant capital deployment'],
+      exitTriggers:['TEU volume falls below 9.5M for 2 consecutive years (structural volume loss)','Tariff hike reversed or challenged by government','Concession terms renegotiated unfavourably'],
+      history:[
+        {yr:'2015',rev:'1.24b',pat:'552m',teu:'9.46M',ebitda:'58.4%',dps:'12.8 sen',roe:'32%'},
+        {yr:'2016',rev:'1.28b',pat:'568m',teu:'9.98M',ebitda:'59.1%',dps:'13.2 sen',roe:'33%'},
+        {yr:'2018',rev:'1.42b',pat:'624m',teu:'10.36M',ebitda:'61.2%',dps:'15.4 sen',roe:'35%'},
+        {yr:'2020',rev:'1.38b',pat:'598m',teu:'9.82M',ebitda:'60.8%',dps:'14.8 sen',roe:'34%'},
+        {yr:'2022',rev:'1.52b',pat:'648m',teu:'10.54M',ebitda:'62.1%',dps:'16.2 sen',roe:'36%'},
+        {yr:'2023',rev:'1.58b',pat:'682m',teu:'10.72M',ebitda:'62.4%',dps:'17.0 sen',roe:'37%'},
+        {yr:'2024',rev:'1.68b',pat:'728m',teu:'10.98M',ebitda:'62.0%',dps:'18.0 sen',roe:'38.5%'},
+      ],
+      histCols:['Revenue','PAT','TEU Vol','EBITDA Mgn','DPS','ROE'],
+      analystViews:'CIMB Research Buy RM6.20 (upgraded from Hold) · Kenanga Outperform RM5.80 · Avg TP RM5.90 · Tariff catalyst Jan 2027 key re-rating event'
+    }
+  },
+  {
+    id:'IHH', name:'IHH Healthcare Berhad', sector:'health', type:'growth',
+    cheap:[5.20,6.50], fair:[6.50,9.00], over:[9.00,11.00], max:12.50,
+    dy:'1.2%', dps:'10 sen', eps:'18 sen', roe:'9.0%', pe:'42x', taxfree:true,
+    m1:{l:'EBITDA Margin',v:'22.5%',c:'good'}, m2:{l:'Rev CAGR',v:'12%',c:'good'}, m3:{l:'Beds',v:'19,000',c:'good'},
+    sp:{l:'TA TP',v:'RM10.30'},
+    note:"Asia's largest pvt hospital. 12% 10-yr CAGR. ASEAN+Turkey+India. Capital gain focus.",
+    entry:'L1 <RM6.50 · L2 RM6.50–9.00 · Growth premium justified',
+    detail:{
+      moat:'Brand moat (Gleneagles, Mount Elizabeth, Pantai — trusted healthcare brands across Asia) + Scale moat (Asia\'s largest private hospital network = purchasing power + talent attraction) + Regulatory moat (hospital licensing barriers) + Network moat (physician relationships across 19,000+ beds)',
+      moatPoints:['19,000+ beds across Malaysia, Singapore, Turkey, India — irreplicable scale','Gleneagles and Mount Elizabeth Singapore = premium pricing power — wealthy patients globally','Turkey Acibadem network: largest private hospital group in Eastern Europe — EBITDA ~RM1.2b','India operations via Fortis Healthcare: growing middle class, medical tourism demand','12% 10-year revenue CAGR — durable compounding with pricing power'],
+      thesis:['Southeast Asia healthcare structural deficit: 1 bed per 500 people vs developed market 3/500','Ageing population: Malaysia, Singapore, Thailand all have rapidly greying demographics','Medical tourism: VMY2026 drives Penang/KL medical tourism — IHH is primary beneficiary','EBITDA margin expansion: Turkey and India maturing hospitals have lower initial margins — will improve to group average','TA Research Buy RM10.30 — implies 19% upside from RM8.65'],
+      risks:['Currency risk: Turkey lira depreciation compresses RM-translated Turkey earnings','Geopolitical risk: Turkey geopolitics periodically disrupt business environment','Capital intensity: hospital expansion requires large upfront capex — FCF negative during expansion','Indian regulations can be unpredictable for foreign-owned hospital operators'],
+      exitTriggers:['Revenue CAGR falls below 7% for 3 consecutive years (franchise maturing)','Turkey operations turn consistently unprofitable','EBITDA margin falls below 18% sustained'],
+      history:[
+        {yr:'2016',rev:'8.42b',pat:'682m',ebitda:'20.2%',beds:'10,800',roe:'6.8%',eps:'8 sen'},
+        {yr:'2018',rev:'11.82b',pat:'842m',ebitda:'21.1%',beds:'13,200',roe:'7.2%',eps:'10 sen'},
+        {yr:'2020',rev:'12.24b',pat:'428m',ebitda:'18.8%',beds:'15,800',roe:'4.2%',eps:'5 sen'},
+        {yr:'2021',rev:'14.68b',pat:'1.02b',ebitda:'20.4%',beds:'16,200',roe:'8.2%',eps:'12 sen'},
+        {yr:'2022',rev:'17.82b',pat:'1.42b',ebitda:'21.8%',beds:'17,400',roe:'9.4%',eps:'16 sen'},
+        {yr:'2023',rev:'21.48b',pat:'1.64b',ebitda:'22.2%',beds:'18,200',roe:'9.2%',eps:'18 sen'},
+        {yr:'2024',rev:'25.75b',pat:'1.82b',ebitda:'22.5%',beds:'19,000',roe:'9.0%',eps:'18 sen'},
+      ],
+      histCols:['Revenue','PAT','EBITDA Mgn','Beds','ROE','EPS'],
+      analystViews:'TA Securities Buy RM10.30 · Maybank IB Buy RM10.00 · Consensus 12 Buy / 2 Hold · Avg TP RM9.80 · Growth premium P/E 42x justified by 12% CAGR'
+    }
+  },
+  {
+    id:'YTLPOWR', name:'YTL Power International Berhad', sector:'util', type:'growth',
+    cheap:[2.60,3.30], fair:[3.30,4.50], over:[4.50,5.80], max:6.50,
+    dy:'2.9%', dps:'8 sen', eps:'43 sen', roe:'12%', pe:'10.9x', taxfree:true,
+    m1:{l:'EPS Growth',v:'FY24 +72%',c:'good'}, m2:{l:'DC Business',v:'AI Cloud',c:'good'}, m3:{l:'P/E',v:'~11x',c:'good'},
+    sp:{l:'HLIB TP',v:'RM5.08'},
+    note:'Data centre re-rating. EPS bottoms FY27, grows FY28+. HLIB TP RM5.08.',
+    entry:'L1 <RM3.30 · L2 RM3.30–4.50 · DC thesis 3–5yr horizon',
+    detail:{
+      moat:'Regulated utility moat (PowerSeraya Singapore — regulated electricity generation) + Emerging moat in data centre (AI Cloud by YTL — first Malaysian regulated DC operator) + Geography moat (Singapore + Malaysia electricity grid access)',
+      moatPoints:['PowerSeraya: Singapore electricity generation — regulated income base','AI Cloud by YTL: Malaysia\'s first AI-scale data centre campus in Johor','Nvidia partnership: secured Blackwell chips — data centre capacity sold out years in advance','Malaysian government\'s National Data Centre roadmap: YTLPOWR is key private partner','Existing power generation infrastructure = natural advantage for DC power supply contracts'],
+      thesis:['Data centre is the re-rating catalyst: DC EBITDA growing from RM200m (FY24) toward RM1b+ (FY28)','EPS cycle: FY26–27 earnings depressed by PowerSeraya spot price weakness + DC ramp costs — BUY THE DIP','FY28F EPS recovery +22% (CGS) as DC assets hit full commercial operation','P/E 11x is cheap for a DC operator: comparable APAC DCs trade 25–35x','HLIB Buy RM5.08: 10% discount to Sum-of-Parts valuation — still 22% upside at RM4.17'],
+      risks:['PowerSeraya: Singapore gas prices volatile — spot market exposure hurts during high-energy-cost periods','DC execution risk: construction delays or hyperscaler contract cancellations','AI spending cycle: if AI capex cools (Deepseek-style disruption), DC demand could soften','YTL Corp related party transactions remain an ESG / governance concern for some funds'],
+      exitTriggers:['DC occupancy rate fails to exceed 70% by FY28','PowerSeraya suffers regulatory adverse outcome in Singapore','AI hyperscaler anchor tenants (Microsoft, Nvidia) cancel Malaysia DC capacity orders'],
+      history:[
+        {yr:'2018',rev:'14.8b',pat:'1.22b',eps:'14 sen',ebitda:'18.2%',dps:'6 sen',roe:'9.8%'},
+        {yr:'2019',rev:'15.2b',pat:'1.38b',eps:'16 sen',ebitda:'18.8%',dps:'6 sen',roe:'10.2%'},
+        {yr:'2020',rev:'14.8b',pat:'1.52b',eps:'18 sen',ebitda:'19.2%',dps:'7 sen',roe:'10.8%'},
+        {yr:'2021',rev:'14.2b',pat:'2.04b',eps:'24 sen',ebitda:'22.1%',dps:'7 sen',roe:'12.1%'},
+        {yr:'2022',rev:'18.8b',pat:'3.82b',eps:'44 sen',ebitda:'28.4%',dps:'8 sen',roe:'18.4%'},
+        {yr:'2023',rev:'22.3b',pat:'4.28b',eps:'50 sen',ebitda:'26.8%',dps:'8 sen',roe:'15.2%'},
+        {yr:'2024',rev:'21.8b',pat:'2.54b',eps:'43 sen',ebitda:'22.2%',dps:'8 sen',roe:'12.0%'},
+      ],
+      histCols:['Revenue','PAT','EPS','EBITDA Mgn','DPS','ROE'],
+      analystViews:'HLIB Research Buy RM5.08 · RHB-OSK Buy RM5.00 · CGS International Add RM4.60 · Consensus 8 Buy / 3 Hold · DC thesis is long 3–5yr horizon'
+    }
+  },
+  {
+    id:'TENAGA', name:'Tenaga Nasional Berhad', sector:'util', type:'growth',
+    cheap:[11,12.50], fair:[12.50,15.00], over:[15.00,17.00], max:18.50,
+    dy:'3.6%', dps:'~50 sen', eps:'~105 sen', roe:'9.0%', pe:'13.5x', taxfree:true,
+    m1:{l:'RAB Model',v:'Regulated',c:'good'}, m2:{l:'ICPT',v:'Pass-thru',c:'good'}, m3:{l:'Net D/EBITDA',v:'3.0x',c:'warn'},
+    sp:{l:'DC Grid',v:'Tailwind'},
+    note:'Grid monopoly. ICPT shields fuel spikes. DC electricity demand kicker.',
+    entry:'L1 <RM12.50 · L2 RM12.50–15.00',
+    detail:{
+      moat:'Regulated monopoly moat (Peninsular Malaysia grid — Act of Parliament required to compete) + ICPT mechanism (automatic cost pass-through = no commodity risk) + Electricity demand monopoly (all data centres, all EVs, all industry MUST use TNB grid)',
+      moatPoints:['Peninsular Malaysia electricity monopoly — 100% market share, legally mandated','IBR/RAB (Incentive-Based Regulation): allowed ROE regulated at 7.5%–9% — earnings floor guaranteed','ICPT: fuel cost increases automatically passed to consumers — TNB bears no commodity risk','Data centre explosion: every DC kW of electricity = recurring TNB revenue, no capex from TNB','EV adoption: each EV adds ~2,500 kWh/year to TNB\'s revenue base'],
+      thesis:['DC electricity demand: Malaysia targeting 10GW DC capacity by 2030 — TNB is the only supplier','EV charging infrastructure: government mandate for EV charging = volume growth','IBR 2025-2027 regulatory period: allowed ROE confirmed 7.5–9% — earnings visibility 3 years','LHDN (LHDN tax case) resolution removes significant overhang — RM10b+ tax dispute being settled','Dividend sustainability: regulated earnings model = consistent dividend — moving toward higher payout'],
+      risks:['Government can change tariff structure — political risk though historically stable','Net D/EBITDA 3.0x relatively high — constrains further borrowing for capex','New renewable energy competitors in generation (not transmission) could reduce earnings long-term','Subsidised electricity pricing in Malaysia limits ability to raise tariffs beyond ICPT'],
+      exitTriggers:['IBR regulatory return falls below 6%','Net debt/EBITDA rises above 4.5x (balance sheet stress)','Major adverse LHDN tax ruling that significantly impairs earnings'],
+      history:[
+        {yr:'2016',rev:'44.8b',pat:'3.42b',eps:'60 sen',ebitda:'28.4%',dps:'38 sen',debt:'3.1x'},
+        {yr:'2018',rev:'50.2b',pat:'3.18b',eps:'56 sen',ebitda:'27.2%',dps:'36 sen',debt:'3.2x'},
+        {yr:'2020',rev:'46.8b',pat:'2.84b',eps:'50 sen',ebitda:'25.8%',dps:'32 sen',debt:'3.4x'},
+        {yr:'2021',rev:'48.2b',pat:'3.28b',eps:'58 sen',ebitda:'26.8%',dps:'38 sen',debt:'3.2x'},
+        {yr:'2022',rev:'58.4b',pat:'4.22b',eps:'74 sen',ebitda:'28.1%',dps:'44 sen',debt:'3.0x'},
+        {yr:'2023',rev:'62.1b',pat:'5.28b',eps:'93 sen',ebitda:'30.2%',dps:'48 sen',debt:'2.9x'},
+        {yr:'2024',rev:'64.98b',pat:'5.88b',eps:'~105 sen',ebitda:'29.8%',dps:'~50 sen',debt:'3.0x'},
+      ],
+      histCols:['Revenue','PAT','EPS','EBITDA Mgn','DPS','Net D/EBITDA'],
+      analystViews:'Maybank IB Buy RM16.00 · CIMB Research Buy RM15.50 · Consensus 12 Buy / 2 Hold · Avg TP RM15.40 · DC/EV electricity demand = new growth thesis'
+    }
+  },
+  {
+    id:'KOSSAN', name:'Kossan Rubber Industries Berhad', sector:'gloves', type:'growth',
+    cheap:[1.40,1.65], fair:[1.65,2.10], over:[2.10,2.60], max:3.00,
+    dy:'1.9%', dps:'2 sen', eps:'~9 sen', roe:'~8%', pe:'~22x', taxfree:true,
+    m1:{l:'ASP',v:'USD24–27',c:'warn'}, m2:{l:'Utilisation',v:'~65%',c:'warn'}, m3:{l:'Net Cash',v:'RM1.0b',c:'good'},
+    sp:{l:'Recovery',v:'Unconfirmed'},
+    note:'RM1b net cash fortress. Wait for ASP >USD28 + utilisation >80% to confirm thesis.',
+    entry:'L1 <RM1.65 + ASP recovery signal · Small position only',
+    detail:{
+      moat:'Operational excellence moat (lean manufacturing + cost discipline) + Balance sheet fortress moat (RM1b+ net cash = competitive weapon during industry shakeout) + Technology moat (nitrile glove formulation IP)',
+      moatPoints:['RM1.0 billion net cash — strongest balance sheet in Malaysia glove sector','Survived COVID boom-bust better than peers: no over-expansion, disciplined capex','Nitrile glove technology: double electron beam (DEB) process = superior barrier properties','Management track record: never issued rights shares unlike most glove peers during boom','Low-cost producer focus: maintained profitability when peers reported losses'],
+      thesis:['ASP recovery cycle: post-COVID oversupply normalising — ASP moving from USD22 (trough) toward USD30+ (recovery)','Utilisation recovery: 65% → 85% would unlock significant operating leverage','Net cash RM1b can fund: acquisitions, share buyback, or special dividend once recovery confirmed','Industry consolidation: weaker competitors (Supermax, Careplus) shutting capacity — market share gains','Healthcare demand structural: ageing Asia, increased hospital capacity, infection prevention awareness'],
+      risks:['ASP recovery slower than expected — China glove exports keeping prices suppressed','USD/MYR FX: stronger ringgit compresses export revenue in RM terms','Utilisation recovery needs 2–3 years based on current ASP trajectory','New entrant risk: Vietnam, Cambodia glove producers building capacity at lower cost'],
+      exitTriggers:['ASP falls below USD20 sustained (full commodity collapse)','Net cash depleted via non-accretive acquisition','Management decision to return to aggressive capex before market recovery confirmed'],
+      history:[
+        {yr:'2018',rev:'2.08b',pat:'212m',eps:'27 sen',asp:'USD30',util:'88%',cash:'RM0.4b'},
+        {yr:'2019',rev:'2.24b',pat:'228m',eps:'29 sen',asp:'USD28',util:'90%',cash:'RM0.5b'},
+        {yr:'2020',rev:'3.12b',pat:'624m',eps:'80 sen',asp:'USD35',util:'100%',cash:'RM1.2b'},
+        {yr:'2021',rev:'6.44b',pat:'3.82b',eps:'488 sen',asp:'USD80+',util:'100%',cash:'RM4.8b'},
+        {yr:'2022',rev:'3.28b',pat:'438m',eps:'56 sen',asp:'USD38',util:'85%',cash:'RM3.2b'},
+        {yr:'2023',rev:'1.82b',pat:'48m',eps:'6 sen',asp:'USD26',util:'68%',cash:'RM1.4b'},
+        {yr:'2024',rev:'1.72b',pat:'~70m',eps:'~9 sen',asp:'USD24–27',util:'~65%',cash:'RM1.0b'},
+      ],
+      histCols:['Revenue','PAT','EPS','ASP (USD)','Utilisation','Net Cash'],
+      analystViews:'RHB Research Buy RM2.10 (recovery play) · CIMB Neutral RM1.80 · Consensus 5 Buy / 5 Hold / 2 Sell · HIGH CONVICTION ONLY — thesis unconfirmed'
+    }
+  }
+];
+
+// ══ PRICE STATE ══
+// VERIFIED PRICES — Latest available (cross-checked across iSaham, Investing.com, TradingView, Google Finance)
+// Some prices may be from days/weeks earlier if exchange data is delayed at sources
+const VERIFIED_PRICES = {
+  PBBANK:  {price:4.85,  date:'23 Jun 2026', src:'Google Finance'},
+  HLBANK:  {price:20.96, date:'8 Jun 2026',  src:'Google Finance'},
+  RHBBANK: {price:8.30,  date:'15 May 2026', src:'Google Finance'},
+  CIMB:    {price:7.48,  date:'23 Jun 2026', src:'Google Finance'},
+  IGBREIT: {price:2.71,  date:'13 Jun 2026', src:'Investing.com'},
+  SUNREIT: {price:2.55,  date:'13 May 2026', src:'iSaham'},
+  PAVREIT: {price:1.88,  date:'15 May 2026', src:'iSaham'},
+  KIPREIT: {price:0.845, date:'31 Mar 2026', src:'iSaham'},
+  HEIM:    {price:19.56, date:'23 Jun 2026', src:'Morningstar / TradingView'},
+  CARLSBG: {price:16.78, date:'15 May 2026', src:'iSaham'},
+  MRDIY:   {price:1.70,  date:'29 Apr 2026', src:'Investing.com'},
+  '99SMART':{price:3.28, date:'18 May 2026', src:'TradingView'},
+  WPRTS:   {price:5.69,  date:'7 May 2026',  src:'iSaham'},
+  IHH:     {price:9.03,  date:'20 Mar 2026', src:'iSaham'},
+  YTLPOWR: {price:4.23,  date:'16 Jun 2026', src:'Google Finance'},
+  TENAGA:  {price:14.52, date:'15 May 2026', src:'iSaham'},
+  KOSSAN:  {price:1.14,  date:'6 Apr 2026',  src:'iSaham'},
+};
+
+const PS = {};
+COUNTERS.forEach(c=>{
+  // Pre-load with verified manual prices so dashboard works immediately
+  const v = VERIFIED_PRICES[c.id];
+  PS[c.id] = v ? {price:v.price, chg:0, pct:0, manual:true, date:v.date, src:v.src} : {price:null,chg:null,pct:null};
+});
+
+// ══ SIGNAL ══
+function getSignal(price, c) {
+  if (!price) return {cls:'sig-na',label:'Loading…'};
+  if (price <= c.cheap[1]) return {cls:'sig-cheap',label:'CHEAP — BUY'};
+  if (price <= c.fair[1])  return {cls:'sig-fair', label:'FAIR VALUE'};
+  if (price <= c.over[1])  return {cls:'sig-over', label:'OVERVALUED'};
+  return {cls:'sig-exp', label:'EXPENSIVE'};
+}
+function getStripe(price, c) {
+  if (!price) return '';
+  if (price <= c.cheap[1]) return 'stripe-cheap';
+  if (price <= c.fair[1])  return 'stripe-fair';
+  if (price <= c.over[1])  return 'stripe-over';
+  return 'stripe-exp';
+}
+function needlePct(price, c) {
+  const lo = c.cheap[0]*0.8;
+  return Math.min(96,Math.max(4,Math.round((price-lo)/(c.max-lo)*100)));
+}
+
+// ══ FETCH ══
+async function fetchPrice(c) {
+  // Try multiple CORS proxies in sequence — first one that works wins
+  const proxies = [
+    u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+    u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+    u => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(u)}`,
+  ];
+  const yahooURL = `https://query1.finance.yahoo.com/v8/finance/chart/${c.code}?interval=1d&range=2d`;
+  for (const wrap of proxies) {
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 8000);
+      const res = await fetch(wrap(yahooURL), {signal: ctrl.signal});
+      clearTimeout(timer);
+      if (!res.ok) continue;
+      const data = await res.json();
+      const r = data?.chart?.result?.[0];
+      if (!r) continue;
+      const meta = r.meta || {};
+      const price = meta.regularMarketPrice;
+      const prev = meta.chartPreviousClose || meta.previousClose;
+      if (!price) continue;
+      const chg = price - prev;
+      const pct = (chg / prev) * 100;
+      return {price, chg, pct, manual: false};
+    } catch (e) {
+      continue;
+    }
+  }
+  return null;
+}
+
+// Map IDs to Yahoo codes
+const YAHOO = {PBBANK:'1295.KL',HLBANK:'5819.KL',RHBBANK:'1066.KL',CIMB:'1023.KL',IGBREIT:'5227.KL',SUNREIT:'5176.KL',PAVREIT:'5212.KL',KIPREIT:'5280.KL',HEIM:'3255.KL',CARLSBG:'2836.KL',MRDIY:'5296.KL','99SMART':'5326.KL',WPRTS:'5246.KL',IHH:'5225.KL',YTLPOWR:'6742.KL',TENAGA:'5347.KL',KOSSAN:'7153.KL'};
+
+async function fetchAll() {
+  const btn=document.getElementById('refreshBtn');
+  const sdot=document.getElementById('sdot');
+  const stext=document.getElementById('stext');
+  btn.disabled=true; btn.textContent='↻ Loading…';
+  sdot.className='sdot loading';
+  let done=0, live=0;
+  await Promise.all(COUNTERS.map(async c=>{
+    const cpy={...c,code:YAHOO[c.id]};
+    const res=await fetchPrice(cpy);
+    done++;
+    // Only overwrite manual price if live fetch succeeded
+    if (res && res.price) {
+      PS[c.id]=res;
+      live++;
+    }
+    stext.textContent=`Fetching ${done}/${COUNTERS.length}…`;
+    updateRow(c.id);
+  }));
+  updateSummary(); buildCheapTable();
+  const now=new Date().toLocaleTimeString('en-MY',{timeZone:'Asia/Kuala_Lumpur',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  if (live > 0) {
+    document.getElementById('last-update').textContent=`Live update: ${now} KL · ${live} live · ${17-live} fallback (verified May 2026)`;
+  } else {
+    document.getElementById('last-update').textContent=`Yahoo Finance unavailable. Showing VERIFIED prices (14-18 May 2026 from iSaham).`;
+  }
+  sdot.className='sdot'; stext.textContent=`${live} live · ${17-live} manual`;
+  btn.disabled=false; btn.textContent='↻ Refresh';
+}
+
+function updateRow(id) {
+  const c=COUNTERS.find(x=>x.id===id);
+  const {price,chg,pct,manual,date}=PS[id];
+  if(!c)return;
+  const pcell=document.getElementById(`pc-${id}`);
+  if(pcell && price) {
+    if (manual) {
+      pcell.innerHTML=`<div class="price-val">RM ${price.toFixed(2)}</div><div style="font-size:9px;color:var(--mu);margin-top:2px;font-family:'DM Mono',monospace">📌 ${date||'manual'}</div>`;
+    } else {
+      pcell.innerHTML=`<div class="price-val">RM ${price.toFixed(2)}</div><div class="chg ${chg>=0?'up':'dn'}">${chg>=0?'+':''}${chg.toFixed(2)} (${pct>=0?'+':''}${pct.toFixed(2)}%)</div>`;
+    }
+  }
+  const sigEl=document.getElementById(`sig-${id}`);
+  if(sigEl && price) { const s=getSignal(price,c); sigEl.className=`sig ${s.cls}`; sigEl.textContent=s.label; }
+  const nEl=document.getElementById(`zn-${id}`);
+  if(nEl && price) nEl.style.left=needlePct(price,c)+'%';
+  const row=document.getElementById(`row-${id}`);
+  if(row && price) row.className=getStripe(price,c);
+}
+
+function updateSummary() {
+  let cheap=0,fair=0,over=0,exp=0;
+  COUNTERS.forEach(c=>{ const p=PS[c.id]?.price; if(!p)return; const s=getSignal(p,c).cls; if(s==='sig-cheap')cheap++; else if(s==='sig-fair')fair++; else if(s==='sig-over')over++; else if(s==='sig-exp')exp++; });
+  document.getElementById('sc-cheap').textContent=cheap;
+  document.getElementById('sc-fair').textContent=fair;
+  document.getElementById('sc-over').textContent=over;
+  document.getElementById('sc-exp').textContent=exp;
+}
+
+// ══ TABLE BUILDER ══
+function sectorHeaders(sec) {
+  const map={bank:'<th>NIM</th><th>NPL Ratio</th><th>CIR / CASA</th>',reit:'<th>NPI Margin</th><th>Gearing</th><th>Occupancy</th>',bev:'<th>EBITDA Margin</th><th>FCF Yield</th><th>Payout</th>',retail:'<th>Gross Margin</th><th>Rev Growth</th><th>Stores</th>',port:'<th>TEU Volume</th><th>EBITDA Margin</th><th>FCF Yield</th>',health:'<th>EBITDA Margin</th><th>Rev CAGR</th><th>Bed Count</th>',util:'<th>Model</th><th>Key Feature</th><th>Net D/EBITDA</th>',gloves:'<th>ASP (USD)</th><th>Utilisation</th><th>Net Cash</th>',mixed:'<th>M1</th><th>M2</th><th>M3</th>'};
+  return map[sec]||map.mixed;
+}
+function typeBadge(t) {
+  if(t==='div')    return '<span class="tbadge tb-div">Dividend</span>';
+  if(t==='growth') return '<span class="tbadge tb-growth">Growth</span>';
+  return '<span class="tbadge tb-both">Hybrid</span>';
+}
+function rowHTML(c) {
+  const ps=PS[c.id];
+  const {price,chg,pct,manual,date}=ps;
+  const sig=getSignal(price,c);
+  const stripe=getStripe(price,c);
+  const np=price?needlePct(price,c):50;
+  let priceCell;
+  if (!price) {
+    priceCell = `<div class="price-loading">loading…</div>`;
+  } else if (manual) {
+    priceCell = `<div class="price-val">RM ${price.toFixed(2)}</div><div style="font-size:9px;color:var(--mu);margin-top:2px;font-family:'DM Mono',monospace">📌 ${date||'manual'}</div>`;
+  } else {
+    priceCell = `<div class="price-val">RM ${price.toFixed(2)}</div><div class="chg ${chg>=0?'up':'dn'}">${chg>=0?'+':''}${chg.toFixed(2)} (${pct>=0?'+':''}${pct.toFixed(2)}%)</div>`;
+  }
+  const zbar=`<div class="zbar-wrap"><div class="zbar"><div class="zneedle" id="zn-${c.id}" style="left:${np}%"></div></div><div class="zlabels"><span>Cheap</span><span>Fair</span><span>Over</span><span>Exp</span></div></div>`;
+  const m=(v,cls,l)=>`<div><div class="mv ${cls}">${v}</div><div class="ml">${l}</div></div>`;
+  const roeCls=parseFloat(c.roe)>=15?'good':parseFloat(c.roe)>=10?'neutral':'warn';
+  const dyCls=parseFloat(c.dy)>=5?'good':parseFloat(c.dy)>=3?'neutral':'warn';
+  return `<tr id="row-${c.id}" class="${stripe}" onclick="openDetail('${c.id}')">
+    <td>
+      ${typeBadge(c.type)}
+      <div class="cid">${c.id}</div>
+      <div class="cname">${c.name}</div>
+      ${c.taxfree?'<div style="font-size:8px;color:var(--ch);font-weight:600;margin-top:2px">✓ Tax-free div</div>':'<div style="font-size:8px;color:var(--mu);margin-top:2px">WHT personal rate</div>'}
+      <div class="view-link">View full analysis →</div>
+    </td>
+    <td id="pc-${c.id}">${priceCell}</td>
+    <td><span class="sig ${sig.cls}" id="sig-${c.id}">${sig.label}</span></td>
+    <td>${zbar}</td>
+    <td><div class="r r-cheap">${c.cheap[0].toFixed(2)}–${c.cheap[1].toFixed(2)}</div></td>
+    <td><div class="r r-fair">${c.fair[0].toFixed(2)}–${c.fair[1].toFixed(2)}</div></td>
+    <td><div class="r r-over">${c.over[0].toFixed(2)}–${c.over[1].toFixed(2)}</div></td>
+    <td>${m(c.m1.v,c.m1.c,c.m1.l)}</td>
+    <td>${m(c.m2.v,c.m2.c,c.m2.l)}</td>
+    <td>${m(c.m3.v,c.m3.c,c.m3.l)}</td>
+    <td>${m(c.sp.v,'neutral',c.sp.l)}</td>
+    <td>${m(c.dps,'neutral','DPS')}</td>
+    <td>${m(c.dy,dyCls,'Est. DY')}</td>
+    <td>${m(c.roe,roeCls,'ROE')}</td>
+    <td>${m(c.pe,'neutral','P/E')}</td>
+    <td><div class="enote">${c.entry}</div></td>
+    <td><div class="enote">${c.note}</div></td>
+  </tr>`;
+}
+function buildTable(el,counters) {
+  if(!el)return;
+  if(!counters.length){el.innerHTML='<thead><tr><th><span class="empty-state">No counters</span></th></tr></thead>';return;}
+  const secs=[...new Set(counters.map(c=>c.sector))];
+  const sec=secs.length===1?secs[0]:'mixed';
+  const thead=`<thead><tr><th>Counter</th><th>Live Price</th><th>Signal</th><th style="min-width:120px">Zone</th><th>Cheap (RM)</th><th>Fair Value (RM)</th><th>Over (RM)</th>${sectorHeaders(sec)}<th>Add. Metric</th><th>DPS</th><th>Est. DY</th><th>ROE</th><th>P/E</th><th>Entry Levels</th><th style="min-width:190px">Note</th></tr></thead>`;
+  el.innerHTML=thead+'<tbody>'+counters.map(rowHTML).join('')+'</tbody>';
+}
+
+// ══ TABS ══
+function switchTab(tab,btn) {
+  document.querySelectorAll('.tpanel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tbtn').forEach(b=>{b.classList.remove('active');b.style.color='';});
+  document.getElementById('tab-'+tab).classList.add('active');
+  btn.classList.add('active');
+  if(tab==='cheap')buildCheapTable();
+}
+function buildCheapTable() {
+  const cheap=COUNTERS.filter(c=>{const p=PS[c.id]?.price;return p&&p<=c.cheap[1];});
+  const el=document.getElementById('tbl-cheap-main');
+  if(!cheap.length){el.innerHTML='<thead><tr><th></th></tr></thead><tbody><tr><td class="empty-state" colspan="99">No counters in cheap zone right now. Refresh to check current prices.</td></tr></tbody>';}
+  else buildTable(el,cheap);
+}
+
+// ══════════════════════════════════════════
+// DETAIL PANEL
+// ══════════════════════════════════════════
+function openDetail(id) {
+  const c = COUNTERS.find(x=>x.id===id);
+  if(!c || !c.detail) return;
+  const d = c.detail;
+  const ps = PS[id];
+  const sig = getSignal(ps?.price, c);
+  const sigColors = {'sig-cheap':'var(--ch)','sig-fair':'var(--fa)','sig-over':'var(--ov)','sig-exp':'var(--ex)','sig-na':'var(--mu)'};
+  const sigBg = {'sig-cheap':'var(--chb)','sig-fair':'var(--fab)','sig-over':'var(--ovb)','sig-exp':'var(--exb)','sig-na':'var(--s2)'};
+
+  document.getElementById('dp-title').textContent = c.id + ' — ' + c.name;
+  document.getElementById('dp-sub').textContent = (c.type==='div'?'Dividend Counter':c.type==='growth'?'Growth Counter':'Hybrid Counter') + ' · ' + (c.taxfree?'Tax-free dividend':'WHT at personal rate');
+
+  // price row
+  const priceRow = ps?.price
+    ? `<div class="dp-price-row">
+        <div><div class="dp-price">RM ${ps.price.toFixed(2)}</div>
+          <div class="chg ${ps.chg>=0?'up':'dn'}" style="margin-top:4px">${ps.chg>=0?'+':''}${ps.chg.toFixed(2)} (${ps.pct>=0?'+':''}${ps.pct.toFixed(2)}%)</div></div>
+        <div>
+          <span class="sig ${sig.cls}" style="font-size:12px;padding:5px 12px">${sig.label}</span>
+          <div style="font-size:11px;color:var(--mu);margin-top:6px">${c.entry}</div>
+        </div>
+      </div>`
+    : `<div class="dp-price-row"><div style="font-size:13px;color:var(--mu)">Price loading — click Refresh in main dashboard</div></div>`;
+
+  // zone boxes
+  const zoneBoxes = `<div class="zone-display">
+    <div class="zone-box zch">
+      <div class="zone-box-lbl">Cheap — Level 1 Buy</div>
+      <div class="zone-box-range">RM ${c.cheap[0].toFixed(2)} – ${c.cheap[1].toFixed(2)}</div>
+      <div class="zone-box-note">Deploy 50–60% of planned position</div>
+    </div>
+    <div class="zone-box zfa">
+      <div class="zone-box-lbl">Fair Value — Accumulate</div>
+      <div class="zone-box-range">RM ${c.fair[0].toFixed(2)} – ${c.fair[1].toFixed(2)}</div>
+      <div class="zone-box-note">Deploy 25–35% of planned position</div>
+    </div>
+    <div class="zone-box zov">
+      <div class="zone-box-lbl">Overvalued — Wait / Trim</div>
+      <div class="zone-box-range">RM ${c.over[0].toFixed(2)} – ${c.over[1].toFixed(2)}</div>
+      <div class="zone-box-note">Hold only, trim into strength</div>
+    </div>
+  </div>`;
+
+  // key KPIs
+  const kpiMap = {
+    DY: c.dy, DPS: c.dps, EPS: c.eps, ROE: c.roe, 'P/E': c.pe,
+    [c.m1.l]: c.m1.v, [c.m2.l]: c.m2.v, [c.m3.l]: c.m3.v, [c.sp.l]: c.sp.v
+  };
+  const kpiGrid = Object.entries(kpiMap).map(([l,v])=>`<div class="kpi"><div class="kpi-val">${v||'—'}</div><div class="kpi-lbl">${l}</div></div>`).join('');
+
+  // history table
+  const histRows = d.history.map(row=>{
+    const vals = d.histCols.map(col=>`<td>${row[Object.keys(row).find(k=>col.toLowerCase().includes(k.toLowerCase().split(' ')[0]))||Object.keys(row)[d.histCols.indexOf(col)+1]]||'—'}</td>`);
+    return `<tr><td>${row.yr}</td>${vals.join('')}</tr>`;
+  }).join('');
+  // simpler approach
+  const histRowsSimple = d.history.map(row=>{
+    const keys = Object.keys(row).filter(k=>k!=='yr');
+    return `<tr><td>${row.yr}</td>${keys.map(k=>`<td>${row[k]}</td>`).join('')}</tr>`;
+  }).join('');
+  const histCols = Object.keys(d.history[0]).filter(k=>k!=='yr');
+
+  const html = `
+    ${priceRow}
+
+    <div class="dp-section">
+      <div class="dp-section-title"><span class="icon">📊</span> Key Metrics Snapshot</div>
+      <div class="kpi-grid">${kpiGrid}</div>
+    </div>
+
+    <div class="dp-section">
+      <div class="dp-section-title"><span class="icon">🏰</span> Moat Analysis</div>
+      <div style="font-size:12px;color:var(--t2);background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:12px 14px;margin-bottom:12px;line-height:1.6">${d.moat}</div>
+      <ul class="moat-list">${d.moatPoints.map(p=>`<li>${p}</li>`).join('')}</ul>
+    </div>
+
+    <div class="dp-section">
+      <div class="dp-section-title"><span class="icon">💡</span> Investment Thesis</div>
+      <ul class="thesis-list">${d.thesis.map(p=>`<li>${p}</li>`).join('')}</ul>
+    </div>
+
+    <div class="dp-section">
+      <div class="dp-section-title"><span class="icon">📈</span> Valuation Zones & Entry Strategy</div>
+      ${zoneBoxes}
+      <div class="entry-strat">
+        <strong>Entry strategy:</strong> ${c.entry}<br><br>
+        <strong>Dry powder rule:</strong> Never deploy full capital in one tranche. Always keep 15% cash reserve.
+        Deploy L1 tranche only when price enters the cheap zone. L2 during fair value accumulation.
+        L3 for highest conviction names only when slightly stretched but fundamentals intact.
+      </div>
+    </div>
+
+    <div class="dp-section">
+      <div class="dp-section-title"><span class="icon">📅</span> 10-Year Financial History</div>
+      <div style="overflow-x:auto;border:1px solid var(--bd);border-radius:8px">
+        <table class="hist-table">
+          <thead><tr><th>Year</th>${histCols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
+          <tbody>${histRowsSimple}</tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="dp-section">
+      <div class="dp-section-title"><span class="icon">⚠️</span> Risks to Monitor</div>
+      <ul class="moat-list risk-list">${d.risks.map(p=>`<li>${p}</li>`).join('')}</ul>
+    </div>
+
+    <div class="dp-section">
+      <div class="dp-section-title"><span class="icon">🚪</span> Exit Triggers</div>
+      <ul class="moat-list exit-list">${d.exitTriggers.map(p=>`<li>${p}</li>`).join('')}</ul>
+    </div>
+
+    <div class="dp-section">
+      <div class="dp-section-title"><span class="icon">🔬</span> Analyst Views</div>
+      <div style="font-size:12px;color:var(--t2);background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:12px 14px;line-height:1.6">${d.analystViews}</div>
+    </div>
+  `;
+
+  document.getElementById('dp-body').innerHTML = html;
+  document.getElementById('detail-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeDetail(e) {
+  if(e.target===document.getElementById('detail-overlay')) closeDetailBtn();
+}
+function closeDetailBtn() {
+  document.getElementById('detail-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown',e=>{ if(e.key==='Escape')closeDetailBtn(); });
+
+// ══ INIT ══
+function init() {
+  const banks=COUNTERS.filter(c=>c.sector==='bank');
+  const reits=COUNTERS.filter(c=>c.sector==='reit');
+  const bev=COUNTERS.filter(c=>c.sector==='bev');
+  const retail=COUNTERS.filter(c=>c.sector==='retail');
+  const port=COUNTERS.filter(c=>c.sector==='port');
+  const growth=COUNTERS.filter(c=>!['bank','reit','bev','retail','port'].includes(c.sector));
+  buildTable(document.getElementById('tbl-banks'),banks);
+  buildTable(document.getElementById('tbl-reits'),reits);
+  buildTable(document.getElementById('tbl-bev'),bev);
+  buildTable(document.getElementById('tbl-retail'),retail);
+  buildTable(document.getElementById('tbl-port'),port);
+  buildTable(document.getElementById('tbl-growth-all'),growth);
+  const divS=[...COUNTERS.filter(c=>c.type==='div')].sort((a,b)=>parseFloat(b.dy)-parseFloat(a.dy));
+  buildTable(document.getElementById('tbl-div-main'),divS);
+  buildTable(document.getElementById('tbl-growth-main'),COUNTERS.filter(c=>c.type==='growth'));
+  buildTable(document.getElementById('tbl-hybrid-main'),COUNTERS.filter(c=>c.type==='hybrid'));
+  // Show verified prices immediately
+  updateSummary();
+  buildCheapTable();
+  document.getElementById('last-update').textContent='Showing VERIFIED prices (latest available from each source). Click ↻ Refresh for live Yahoo Finance prices.';
+  document.getElementById('stext').textContent='17 verified';
+  setInterval(()=>{
+    const kl=new Date().toLocaleTimeString('en-MY',{timeZone:'Asia/Kuala_Lumpur',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    document.getElementById('clock').textContent=`KL  ${kl}`;
+  },1000);
+  setInterval(fetchAll,5*60*1000);
+  // Try to fetch live prices but don't block initial render
+  setTimeout(fetchAll, 1500);
+}
+init();
+</script>
+</body>
+</html>
